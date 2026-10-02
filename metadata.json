@@ -1,0 +1,6 @@
+{
+  "name": "BLS Cash Record",
+  "description": "Internal ledger and student fee tracking system for Blended Learning School (BLS). Tracks Bank & Cash transactions, pending fees, student records, and auto-generates reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

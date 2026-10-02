@@ -1,0 +1,46 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "counters": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "vouchers": {
+        "income": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "expense": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        }
+      }
+    },
+    "students": {
+      ".indexOn": ["regNo", "className", "studentName", "admissionDate", "isDeleted", "updatedAt"],
+      "$studentId": {
+        ".validate": "newData.hasChildren(['id', 'studentName', 'className', 'monthlyFee'])"
+      }
+    },
+    "transactions": {
+      ".indexOn": ["studentId", "date", "paymentMode", "isIncome", "category", "monthOfFee", "voucherNo", "updatedAt"],
+      "$txId": {
+        ".validate": "newData.hasChildren(['id', 'amount', 'category', 'isIncome', 'paymentMode', 'date']) && newData.child('amount').isNumber() && newData.child('amount').val() > 0"
+      }
+    },
+    "daily_closings": {
+      ".indexOn": ["dateString", "closingCash", "closingBank"],
+      "$closingDate": {
+        ".validate": "newData.hasChildren(['dateString', 'closingCash', 'closingBank'])"
+      }
+    },
+    "activity_feed": {
+      ".indexOn": ["timestamp", "authorRole", "type"],
+      "$activityId": {
+        ".validate": "newData.hasChildren(['id', 'title', 'timestamp', 'type'])"
+      }
+    },
+    "system_settings": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.token.admin == true || auth.token.role == 'ADMIN')"
+    }
+  }
+}

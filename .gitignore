@@ -1,0 +1,37 @@
+*.iml
+.gradle
+.kotlin
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+.env
+debug.keystore
+credentials/
+*service-account*.json
+*google-services*.json
+*.pem
+*.p12
+
+# Root level temporary files and artifacts
+/*.png
+/*.webp
+/*.apk
+imp.txt
+.agents/
+
+# Local database backups (contain student data)
+db_backup/
+*.db
+*.db-shm
+*.db-wal
+
