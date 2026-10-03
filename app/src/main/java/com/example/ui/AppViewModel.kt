@@ -1193,6 +1193,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 }
             )
             if (file != null) {
+                _downloadProgress.value = 1.0f
                 _downloadedApkFile.value = file
                 com.example.util.GitHubUpdateManager.installApk(context, file)
             } else {

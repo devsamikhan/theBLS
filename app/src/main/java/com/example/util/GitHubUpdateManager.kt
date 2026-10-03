@@ -180,11 +180,19 @@ object GitHubUpdateManager {
      */
     fun installApk(context: Context, apkFile: File) {
         try {
-            if (!apkFile.exists()) return
+            if (!apkFile.exists()) {
+                android.widget.Toast.makeText(context, "Update file not found. Please re-download.", android.widget.Toast.LENGTH_SHORT).show()
+                return
+            }
 
             // Android 8.0+ (API 26+) Permission check for installing unknown apps
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 if (!context.packageManager.canRequestPackageInstalls()) {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Please allow install permission from this source, then tap Install Now",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
                     val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
                         data = Uri.parse("package:${context.packageName}")
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -204,10 +212,13 @@ object GitHubUpdateManager {
                 setDataAndType(apkUri, "application/vnd.android.package-archive")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
             }
             context.startActivity(installIntent)
         } catch (e: Exception) {
             e.printStackTrace()
+            android.widget.Toast.makeText(context, "Installation error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
         }
     }
 
