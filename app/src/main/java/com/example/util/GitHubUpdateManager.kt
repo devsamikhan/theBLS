@@ -42,7 +42,7 @@ object GitHubUpdateManager {
     /**
      * Checks GitHub Releases for the latest version and compares with local version
      */
-    suspend fun checkForUpdate(currentVersion: String = "1.0.1"): Result<AppUpdateInfo> = withContext(Dispatchers.IO) {
+    suspend fun checkForUpdate(currentVersion: String = "1.0.2"): Result<AppUpdateInfo> = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder()
                 .url(API_URL)
