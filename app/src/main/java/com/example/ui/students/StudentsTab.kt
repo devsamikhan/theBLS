@@ -1447,7 +1447,10 @@ fun IndividualStudentDetailCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     if (!isWideScreen) {
                         IconButton(
                             onClick = onClose,
@@ -1460,13 +1463,15 @@ fun IndividualStudentDetailCard(
                                 modifier = Modifier.size(20.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
                     Text(
-                        "Student Profile & Ledger",
+                        "Student Ledger",
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
                 
@@ -1474,11 +1479,11 @@ fun IndividualStudentDetailCard(
                     OutlinedButton(
                         onClick = onPrintChallan,
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                         modifier = Modifier.height(34.dp)
                     ) {
-                        Icon(Icons.Default.Receipt, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.Default.Receipt, contentDescription = null, modifier = Modifier.size(13.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text("Challan", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
 
@@ -1486,11 +1491,11 @@ fun IndividualStudentDetailCard(
                         onClick = onCollectFee,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                         modifier = Modifier.height(34.dp)
                     ) {
-                        Icon(Icons.Default.AddCard, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color.White)
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.Default.AddCard, contentDescription = null, modifier = Modifier.size(13.dp), tint = Color.White)
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text("Collect Fee", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
@@ -1733,11 +1738,11 @@ fun IndividualStudentDetailCard(
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
-                            modifier = Modifier.weight(1f).height(34.dp)
+                            modifier = Modifier.weight(1f).height(38.dp)
                         ) {
                             Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(13.dp), tint = Color.White)
                             Spacer(modifier = Modifier.width(3.dp))
-                            Text("Admission", color = Color.White, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Admission", color = Color.White, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                         }
 
                         Button(
@@ -1745,11 +1750,11 @@ fun IndividualStudentDetailCard(
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B365D)),
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
-                            modifier = Modifier.weight(1f).height(34.dp)
+                            modifier = Modifier.weight(1f).height(38.dp)
                         ) {
                             Icon(Icons.Default.ReceiptLong, contentDescription = null, modifier = Modifier.size(13.dp), tint = Color.White)
                             Spacer(modifier = Modifier.width(3.dp))
-                            Text("Closing Challan", color = Color.White, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Clearance", color = Color.White, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                         }
 
                         OutlinedButton(
@@ -1766,11 +1771,11 @@ fun IndividualStudentDetailCard(
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
-                            modifier = Modifier.weight(1f).height(34.dp)
+                            modifier = Modifier.weight(1f).height(38.dp)
                         ) {
                             Icon(Icons.Default.School, contentDescription = null, modifier = Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurface)
                             Spacer(modifier = Modifier.width(3.dp))
-                            Text("SLC Cert", color = MaterialTheme.colorScheme.onSurface, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold)
+                            Text("SLC Cert", color = MaterialTheme.colorScheme.onSurface, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                         }
                     }
 
@@ -1790,6 +1795,18 @@ fun IndividualStudentDetailCard(
                         Column {
                             Text("Admission Fee", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Rs. ${student.admissionFee.toInt()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        if (student.annualCharges > 0.0) {
+                            Column {
+                                Text("Annual Chgs", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rs. ${student.annualCharges.toInt()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+                        if (student.otherCharges > 0.0) {
+                            Column {
+                                Text("Other Chgs", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rs. ${student.otherCharges.toInt()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                            }
                         }
                         Column {
                             Text("Discount Mode", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1943,6 +1960,7 @@ fun IndividualStudentDetailCard(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(96.dp))
         }
     }
 }

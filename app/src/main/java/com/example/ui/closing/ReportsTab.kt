@@ -1036,12 +1036,13 @@ private fun ReportGridTile(
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(1.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     item.description,
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
+                    maxLines = 2,
+                    lineHeight = 13.sp,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
@@ -1054,8 +1055,12 @@ private fun ReportGridTile(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+                val pillTextColor = if (isDark) MaterialTheme.colorScheme.primary else item.iconTintColor
+                val pillBgColor = if (isDark) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else item.iconTintColor.copy(alpha = 0.08f)
+
                 Surface(
-                    color = item.iconTintColor.copy(alpha = 0.08f),
+                    color = pillBgColor,
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .weight(1f)
@@ -1072,14 +1077,14 @@ private fun ReportGridTile(
                             item.primaryButtonText,
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = item.iconTintColor,
+                            color = pillTextColor,
                             maxLines = 1
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
                             Icons.Default.ArrowForward,
                             contentDescription = null,
-                            tint = item.iconTintColor,
+                            tint = pillTextColor,
                             modifier = Modifier.size(11.dp)
                         )
                     }
