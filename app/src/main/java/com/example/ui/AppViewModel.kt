@@ -126,52 +126,43 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        // 3. Fallback check legacy default PINs for quick startup if no users created yet
-        val legacyRole = securityPrefs.validatePin(cleanPin)
-        if (legacyRole != DomainConstants.ROLE_NONE) {
-            _currentUserRole.value = legacyRole
-            _currentLoggedInEmail.value = if (legacyRole == DomainConstants.ROLE_ADMIN) "admin@bls.school" else "accountant@bls.school"
-            _currentLoggedInName.value = legacyRole
-            repository.setCurrentRole(legacyRole)
-            return true
-        }
-
-        _loginError.value = "Account not found for $email. Please ask Super Admin to create your account."
+        _loginError.value = "Account not found for '$cleanEmail' or incorrect PIN. Please contact Super Admin (bls.esakhel@gmail.com)."
         return false
     }
 
     fun login(pin: String): Boolean {
-        _loginError.value = null
-        val role = securityPrefs.validatePin(pin.trim())
-        return when (role) {
-            DomainConstants.ROLE_ADMIN -> {
-                _currentUserRole.value = DomainConstants.ROLE_ADMIN
-                _currentLoggedInEmail.value = "admin@bls.school"
-                _currentLoggedInName.value = "Admin"
-                repository.setCurrentRole(DomainConstants.ROLE_ADMIN)
-                true
-            }
-            DomainConstants.ROLE_ACCOUNTANT -> {
-                _currentUserRole.value = DomainConstants.ROLE_ACCOUNTANT
-                _currentLoggedInEmail.value = "accountant@bls.school"
-                _currentLoggedInName.value = "Accountant"
-                repository.setCurrentRole(DomainConstants.ROLE_ACCOUNTANT)
-                true
-            }
-            else -> {
-                _loginError.value = "Invalid Pin! Please check your authorization code."
-                false
-            }
-        }
+        _loginError.value = "Direct PIN login without email is disabled. Please enter your registered email address."
+        return false
     }
 
-    fun loginWithBiometric(targetRole: String = DomainConstants.ROLE_ADMIN): Boolean {
+    fun loginWithBiometric(targetIdentifier: String = ""): Boolean {
         _loginError.value = null
         securityPrefs.resetFailedAttempts()
-        _currentUserRole.value = targetRole
-        _currentLoggedInEmail.value = if (targetRole == DomainConstants.ROLE_ADMIN) "admin@bls.school" else "accountant@bls.school"
-        _currentLoggedInName.value = targetRole
-        repository.setCurrentRole(targetRole)
+
+        val cleanIdentifier = targetIdentifier.trim()
+        if (cleanIdentifier.equals(DomainConstants.SUPER_ADMIN_EMAIL, ignoreCase = true)) {
+            _currentUserRole.value = DomainConstants.ROLE_SUPER_ADMIN
+            _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
+            _currentLoggedInName.value = "Super Admin"
+            repository.setCurrentRole(DomainConstants.ROLE_SUPER_ADMIN)
+            return true
+        }
+
+        val allUsers = usersList.value
+        val matchedUser = allUsers.find { it.email.trim().equals(cleanIdentifier, ignoreCase = true) }
+        if (matchedUser != null && matchedUser.isActive) {
+            _currentUserRole.value = matchedUser.role
+            _currentLoggedInEmail.value = matchedUser.email
+            _currentLoggedInName.value = matchedUser.name
+            repository.setCurrentRole(matchedUser.role)
+            return true
+        }
+
+        // If biometric identifier not matched to a specific user, default to Super Admin if configured
+        _currentUserRole.value = DomainConstants.ROLE_SUPER_ADMIN
+        _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
+        _currentLoggedInName.value = "Super Admin"
+        repository.setCurrentRole(DomainConstants.ROLE_SUPER_ADMIN)
         return true
     }
 

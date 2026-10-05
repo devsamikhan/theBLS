@@ -384,9 +384,20 @@ fun LoginScreen(
                             val sanitized = input.filter { it.isDigit() }.take(4)
                             pinInput = sanitized
                             hasError = false
+                            localError = null
                             if (sanitized.length == 4) {
-                                val success = onLoginAttempt(sanitized)
-                                hasError = !success
+                                val email = staffEmailInput.trim()
+                                if (email.isBlank()) {
+                                    localError = "Please enter your registered email address first."
+                                    hasError = true
+                                } else {
+                                    val success = onEmailLoginAttempt?.invoke(email, sanitized)
+                                        ?: onLoginAttempt(sanitized)
+                                    hasError = !success
+                                    if (!success) {
+                                        localError = "Invalid email or PIN! Please verify credentials."
+                                    }
+                                }
                             }
                         },
                         keyboardOptions = KeyboardOptions(
@@ -395,9 +406,17 @@ fun LoginScreen(
                         ),
                         keyboardActions = KeyboardActions(
                             onDone = {
-                                if (pinInput.length == 4) {
-                                    val success = onLoginAttempt(pinInput)
+                                val email = staffEmailInput.trim()
+                                if (email.isBlank()) {
+                                    localError = "Please enter your registered email address."
+                                    hasError = true
+                                } else if (pinInput.length == 4) {
+                                    val success = onEmailLoginAttempt?.invoke(email, pinInput)
+                                        ?: onLoginAttempt(pinInput)
                                     hasError = !success
+                                    if (!success) {
+                                        localError = "Invalid email or PIN! Please verify credentials."
+                                    }
                                 }
                             }
                         ),
@@ -581,13 +600,20 @@ fun LoginScreen(
                         Button(
                             onClick = {
                                 localError = null
-                                val success = if (staffEmailInput.isNotBlank() && onEmailLoginAttempt != null) {
-                                    onEmailLoginAttempt(staffEmailInput, pinInput)
+                                val email = staffEmailInput.trim()
+                                if (email.isBlank()) {
+                                    localError = "Please enter your registered email address."
+                                    hasError = true
+                                } else if (pinInput.length < 4) {
+                                    localError = "Please enter your complete 4-digit PIN."
+                                    hasError = true
                                 } else {
-                                    onLoginAttempt(pinInput)
-                                }
-                                if (!success && localError == null) {
-                                    localError = "Invalid PIN or Email! Please verify credentials."
+                                    val success = onEmailLoginAttempt?.invoke(email, pinInput)
+                                        ?: onLoginAttempt(pinInput)
+                                    hasError = !success
+                                    if (!success) {
+                                        localError = "Invalid email or PIN! Please verify credentials."
+                                    }
                                 }
                             },
                             modifier = Modifier
@@ -605,153 +631,40 @@ fun LoginScreen(
                             )
                         }
 
-                        IconButton(
-                            onClick = {
-                                BiometricAuthHelper.authenticate(
-                                    context = context,
-                                    onSuccess = {
-                                        // Successfully verified via fingerprint or screen lock
-                                        if (onBiometricSuccess != null) {
-                                            onBiometricSuccess("Admin")
-                                        } else {
-                                            onLoginAttempt("8888")
+                        if (onBiometricSuccess != null) {
+                            IconButton(
+                                onClick = {
+                                    BiometricAuthHelper.authenticate(
+                                        context = context,
+                                        onSuccess = {
+                                            val email = staffEmailInput.trim()
+                                            if (email.isNotBlank() && onEmailLoginAttempt != null) {
+                                                onBiometricSuccess(email)
+                                            } else {
+                                                onBiometricSuccess("Admin")
+                                            }
+                                        },
+                                        onError = { errMsg ->
+                                            Toast.makeText(context, errMsg, Toast.LENGTH_SHORT).show()
                                         }
-                                    },
-                                    onError = { errMsg ->
-                                        Toast.makeText(context, errMsg, Toast.LENGTH_SHORT).show()
-                                    }
+                                    )
+                                },
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
+                                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                            ) {
+                                Icon(
+                                    Icons.Default.Fingerprint,
+                                    contentDescription = "Biometric Fingerprint Login",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(26.dp)
                                 )
-                            },
-                            modifier = Modifier
-                                .size(46.dp)
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
-                                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-                        ) {
-                            Icon(
-                                Icons.Default.Fingerprint,
-                                contentDescription = "Biometric Fingerprint Login",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(18.dp))
-                    
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-                    
-                    Spacer(modifier = Modifier.height(14.dp))
-                    
-                    // Quick Staff Access Shortcuts
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "QUICK ACCESS (INTERNAL STAFF)",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            // Admin Shortcut
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable {
-                                        pinInput = "8888"
-                                        hasError = false
-                                        val success = onLoginAttempt("8888")
-                                        hasError = !success
-                                    },
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column {
-                                        Text(
-                                            "Admin",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Text(
-                                            "PIN: 8888",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontSize = 11.sp
-                                        )
-                                    }
-                                    Icon(
-                                        Icons.Default.ArrowForward,
-                                        contentDescription = "Login as Admin",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            }
-
-                            // Accountant Shortcut
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable {
-                                        pinInput = "1111"
-                                        hasError = false
-                                        val success = onLoginAttempt("1111")
-                                        hasError = !success
-                                    },
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column {
-                                        Text(
-                                            "Accountant",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Text(
-                                            "PIN: 1111",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontSize = 11.sp
-                                        )
-                                    }
-                                    Icon(
-                                        Icons.Default.ArrowForward,
-                                        contentDescription = "Login as Accountant",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
                             }
                         }
                     }
                 }
+            }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -764,5 +677,4 @@ fun LoginScreen(
             )
         }
     }
-}
 }
