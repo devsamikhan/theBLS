@@ -197,4 +197,41 @@ class AppRepository(private val appDao: AppDao) {
             closedBy = ""
         )
     }
+
+    // App Users Management
+    val allUsersFlow: Flow<List<AppUser>> = appDao.getAllUsersFlow()
+
+    suspend fun getAllUsers(): List<AppUser> = appDao.getAllUsers()
+
+    suspend fun getUserByEmail(email: String): AppUser? = appDao.getUserByEmail(email)
+
+    suspend fun insertUser(user: AppUser): Long {
+        val rowId = appDao.insertUser(user)
+        val target = if (user.id == 0) user.copy(id = rowId.toInt()) else user
+        syncManager.pushUser(target)
+        return rowId
+    }
+
+    suspend fun updateUser(user: AppUser) {
+        val updated = user.copy(updatedAt = System.currentTimeMillis())
+        appDao.updateUser(updated)
+        syncManager.pushUser(updated)
+    }
+
+    suspend fun updateUserStatus(id: Int, isActive: Boolean) {
+        appDao.updateUserStatus(id, isActive)
+        appDao.getAllUsers().find { it.id == id }?.let { syncManager.pushUser(it) }
+    }
+
+    suspend fun deleteUser(user: AppUser) {
+        appDao.deleteUser(user)
+        syncManager.deleteUserFromCloud(user.id)
+    }
+
+    suspend fun wipeAllDummyData(): Boolean {
+        appDao.clearAllStudents()
+        appDao.clearAllTransactions()
+        appDao.clearAllDailyClosings()
+        return syncManager.wipeCloudData()
+    }
 }

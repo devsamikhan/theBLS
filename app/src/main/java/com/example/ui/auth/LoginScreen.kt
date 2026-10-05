@@ -14,12 +14,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,11 +39,18 @@ import com.example.util.BiometricAuthHelper
 @Composable
 fun LoginScreen(
     onBiometricSuccess: ((String) -> Unit)? = null,
-    onLoginAttempt: (String) -> Boolean
+    onLoginAttempt: (String) -> Boolean,
+    onEmailLoginAttempt: ((String, String) -> Boolean)? = null,
+    onSuperAdminLoginAttempt: ((String, String) -> Boolean)? = null,
+    errorMessage: String? = null
 ) {
+    var isSuperAdminMode by remember { mutableStateOf(false) }
+    var staffEmailInput by remember { mutableStateOf("") }
     var pinInput by remember { mutableStateOf("") }
+    var superAdminKeyInput by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var hasError by remember { mutableStateOf(false) }
+    var localError by remember { mutableStateOf<String?>(null) }
     val focusRequester = remember { FocusRequester() }
     val context = LocalContext.current
 
@@ -113,7 +115,80 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(if (isCompactScreen) 16.dp else 22.dp))
+            Spacer(modifier = Modifier.height(if (isCompactScreen) 12.dp else 16.dp))
+
+            // Mode Selector Pill (Staff Access vs Super Admin)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Surface(
+                    onClick = {
+                        isSuperAdminMode = false
+                        localError = null
+                    },
+                    shape = RoundedCornerShape(9.dp),
+                    color = if (!isSuperAdminMode) MaterialTheme.colorScheme.surface else Color.Transparent,
+                    shadowElevation = if (!isSuperAdminMode) 1.dp else 0.dp,
+                    modifier = Modifier.weight(1f).height(36.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Badge,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = if (!isSuperAdminMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            "Staff Login",
+                            fontSize = 11.5.sp,
+                            fontWeight = if (!isSuperAdminMode) FontWeight.Bold else FontWeight.Medium,
+                            color = if (!isSuperAdminMode) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Surface(
+                    onClick = {
+                        isSuperAdminMode = true
+                        localError = null
+                    },
+                    shape = RoundedCornerShape(9.dp),
+                    color = if (isSuperAdminMode) MaterialTheme.colorScheme.surface else Color.Transparent,
+                    shadowElevation = if (isSuperAdminMode) 1.dp else 0.dp,
+                    modifier = Modifier.weight(1f).height(36.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.VerifiedUser,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = if (isSuperAdminMode) Color(0xFFE65100) else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            "Super User",
+                            fontSize = 11.5.sp,
+                            fontWeight = if (isSuperAdminMode) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSuperAdminMode) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             // Auth Card
             Card(
@@ -127,40 +202,180 @@ fun LoginScreen(
                     modifier = Modifier.padding(if (isCompactScreen) 16.dp else 22.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Lock Icon Badge
-                    Surface(
-                        modifier = Modifier.size(44.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.Lock,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                    if (isSuperAdminMode) {
+                        // ==================== SUPER ADMIN LOGIN VIEW ====================
+                        Surface(
+                            modifier = Modifier.size(44.dp),
+                            shape = CircleShape,
+                            color = Color(0xFFFFF3E0),
+                            border = BorderStroke(1.dp, Color(0xFFFFB74D))
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Security,
+                                    contentDescription = null,
+                                    tint = Color(0xFFE65100),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                    Text(
-                        "Secure Authorization",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        "Enter your 4-digit secret authorization PIN",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp),
-                        textAlign = TextAlign.Center
-                    )
+                        Text(
+                            "Super User Verification",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            "Exclusive master administrator control portal",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp),
+                            textAlign = TextAlign.Center
+                        )
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Locked Super Admin Email Field
+                        OutlinedTextField(
+                            value = com.example.data.DomainConstants.SUPER_ADMIN_EMAIL,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Super Admin Gmail") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Mail, contentDescription = null, tint = Color(0xFFE65100), modifier = Modifier.size(18.dp))
+                            },
+                            trailingIcon = {
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = Color(0xFFE8F5E9)
+                                ) {
+                                    Text("VERIFIED", color = Color(0xFF2E7D32), fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                }
+                            },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = superAdminKeyInput,
+                            onValueChange = {
+                                superAdminKeyInput = it
+                                localError = null
+                            },
+                            label = { Text("Master Passkey or PIN") },
+                            placeholder = { Text("Enter Super Admin Key") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                            },
+                            trailingIcon = {
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(
+                                        if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            },
+                            visualTransformation = if (passwordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    val success = onSuperAdminLoginAttempt?.invoke(com.example.data.DomainConstants.SUPER_ADMIN_EMAIL, superAdminKeyInput)
+                                        ?: onLoginAttempt(superAdminKeyInput)
+                                    if (!success) {
+                                        localError = "Invalid Super Admin Security Key."
+                                    }
+                                }
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Button(
+                            onClick = {
+                                val success = onSuperAdminLoginAttempt?.invoke(com.example.data.DomainConstants.SUPER_ADMIN_EMAIL, superAdminKeyInput)
+                                    ?: onLoginAttempt(superAdminKeyInput)
+                                if (!success) {
+                                    localError = "Invalid Super Admin Security Key."
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Sign In as Super User", fontWeight = FontWeight.Bold)
+                        }
+
+                    } else {
+                        // ==================== STAFF LOGIN VIEW (EMAIL + PIN) ====================
+                        Surface(
+                            modifier = Modifier.size(44.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Text(
+                            "Staff Authorization",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            "Enter your assigned email address and 4-digit PIN",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp),
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        OutlinedTextField(
+                            value = staffEmailInput,
+                            onValueChange = {
+                                staffEmailInput = it
+                                localError = null
+                            },
+                            label = { Text("Registered Email Address") },
+                            placeholder = { Text("e.g. accountant@bls.school") },
+                            leadingIcon = {
+                                Icon(Icons.Default.MailOutline, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            "4-DIGIT PIN",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
 
                     // Minimalist 4-Digit Box Input (Unified with BasicTextField)
                     BasicTextField(
@@ -324,7 +539,8 @@ fun LoginScreen(
                     }
 
                     // Error Alert Banner
-                    if (hasError) {
+                    val activeError = localError ?: errorMessage
+                    if (activeError != null) {
                         Surface(
                             color = MaterialTheme.financialColors.expenseContainer.copy(alpha = 0.35f),
                             border = BorderStroke(1.dp, MaterialTheme.financialColors.expense.copy(alpha = 0.4f)),
@@ -345,7 +561,7 @@ fun LoginScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(
-                                    "Invalid PIN! Admin pin is 8888, Accountant pin is 1111.",
+                                    activeError,
                                     color = MaterialTheme.financialColors.expense,
                                     style = MaterialTheme.typography.bodySmall,
                                     fontSize = 11.sp
@@ -364,8 +580,15 @@ fun LoginScreen(
                     ) {
                         Button(
                             onClick = {
-                                val success = onLoginAttempt(pinInput)
-                                hasError = !success
+                                localError = null
+                                val success = if (staffEmailInput.isNotBlank() && onEmailLoginAttempt != null) {
+                                    onEmailLoginAttempt(staffEmailInput, pinInput)
+                                } else {
+                                    onLoginAttempt(pinInput)
+                                }
+                                if (!success && localError == null) {
+                                    localError = "Invalid PIN or Email! Please verify credentials."
+                                }
                             },
                             modifier = Modifier
                                 .weight(1f)
@@ -541,4 +764,5 @@ fun LoginScreen(
             )
         }
     }
+}
 }

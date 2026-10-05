@@ -378,6 +378,28 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
                 }
             }
 
+            // 4. Hydrate App Users
+            if (rootObj.has("app_users") && !rootObj.isNull("app_users")) {
+                val usersList = mutableListOf<AppUser>()
+                val usersVal = rootObj.get("app_users")
+                if (usersVal is JSONObject) {
+                    val keys = usersVal.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        val uObj = usersVal.optJSONObject(key) ?: continue
+                        parseUserJson(uObj)?.let { usersList.add(it) }
+                    }
+                } else if (usersVal is org.json.JSONArray) {
+                    for (i in 0 until usersVal.length()) {
+                        val uObj = usersVal.optJSONObject(i) ?: continue
+                        parseUserJson(uObj)?.let { usersList.add(it) }
+                    }
+                }
+                if (usersList.isNotEmpty()) {
+                    appDao.insertUsers(usersList)
+                }
+            }
+
             Log.d(TAG, "Initial hydration from Firebase complete.")
         } catch (e: Exception) {
             Log.e(TAG, "Error in initial hydration: ${e.message}")
@@ -512,6 +534,18 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
                         fetchAndHydrateInitialData()
                     }
                 }
+                "app_users" -> {
+                    if (data == null || data == JSONObject.NULL) {
+                        documentId?.toIntOrNull()?.let { uid ->
+                            val user = appDao.getAllUsers().find { it.id == uid }
+                            if (user != null) appDao.deleteUser(user)
+                        }
+                    } else if (data is JSONObject) {
+                        parseUserJson(data)?.let { appDao.insertUser(it) }
+                    } else {
+                        fetchAndHydrateInitialData()
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error handling stream event: ${e.message}")
@@ -607,7 +641,72 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
         }
     }
 
-    // ==================== RAW HTTP UTILITIES ====================
+    private fun parseUserJson(obj: JSONObject): AppUser? {
+        return try {
+            val id = obj.optInt("id", 0)
+            val email = obj.optString("email", "")
+            if (id == 0 || email.isBlank()) return null
+            AppUser(
+                id = id,
+                name = obj.optString("name", "Staff Member"),
+                email = email,
+                role = obj.optString("role", DomainConstants.ROLE_ACCOUNTANT),
+                pin = obj.optString("pin", "1111"),
+                isActive = obj.optBoolean("isActive", true),
+                createdBy = obj.optString("createdBy", "Super Admin"),
+                createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
+                updatedAt = obj.optLong("updatedAt", System.currentTimeMillis())
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun pushUser(user: AppUser, scope: CoroutineScope = CoroutineScope(Dispatchers.IO)) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val json = JSONObject().apply {
+                    put("id", user.id)
+                    put("name", user.name)
+                    put("email", user.email)
+                    put("role", user.role)
+                    put("pin", user.pin)
+                    put("isActive", user.isActive)
+                    put("createdBy", user.createdBy)
+                    put("createdAt", user.createdAt)
+                    put("updatedAt", user.updatedAt)
+                }
+                httpPut(getEndpointUrl("app_users/${user.id}.json"), json.toString())
+                Log.d(TAG, "User ${user.email} pushed to Firebase successfully.")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error pushing user to cloud: ${e.message}")
+            }
+        }
+    }
+
+    fun deleteUserFromCloud(userId: Int, scope: CoroutineScope = CoroutineScope(Dispatchers.IO)) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                httpDelete(getEndpointUrl("app_users/$userId.json"))
+                Log.d(TAG, "User $userId deleted from Firebase.")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting user from cloud: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun wipeCloudData(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            httpDelete(getEndpointUrl("students.json"))
+            httpDelete(getEndpointUrl("transactions.json"))
+            httpDelete(getEndpointUrl("daily_closings.json"))
+            Log.d(TAG, "Cloud data wiped successfully.")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error wiping cloud data: ${e.message}")
+            false
+        }
+    }
 
     private fun httpGet(urlStr: String): String? {
         val url = URL(urlStr)

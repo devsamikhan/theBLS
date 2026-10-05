@@ -32,6 +32,7 @@ import com.example.data.DomainConstants
 import com.example.ui.auth.LoginScreen
 import com.example.ui.components.*
 import com.example.ui.closing.ReportsTab
+import com.example.ui.closing.dialogs.UserManagementDialog
 import com.example.ui.ledger.LedgerTab
 import com.example.ui.ledger.AddExpenseDialog
 import com.example.ui.ledger.ReceiveFeeDialogDirect
@@ -64,6 +65,12 @@ fun BLSApp(viewModel: AppViewModel) {
                     },
                     onLoginAttempt = { pin ->
                         viewModel.login(pin)
+                    },
+                    onEmailLoginAttempt = { email, pin ->
+                        viewModel.loginWithEmailAndPin(email, pin)
+                    },
+                    onSuperAdminLoginAttempt = { email, key ->
+                        viewModel.loginSuperAdmin(email, key)
                     }
                 )
                 else -> DashboardContainer(viewModel = viewModel)
@@ -90,6 +97,7 @@ fun DashboardContainer(viewModel: AppViewModel) {
     var showActivityDialog by remember { mutableStateOf(false) }
     var showCloudSyncDialog by remember { mutableStateOf(false) }
     var showUserMenu by remember { mutableStateOf(false) }
+    var showUserManagementDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.checkForAppUpdates(silent = true)
@@ -299,8 +307,8 @@ fun DashboardContainer(viewModel: AppViewModel) {
                         Crossfade(targetState = currentTab, label = "TabletTabTransition") { tab ->
                             when (tab) {
                                 0 -> StudentsTab(viewModel)
-                                1 -> LedgerTab(viewModel, showAdminPanel = role == DomainConstants.ROLE_ADMIN)
-                                2 -> ReportsTab(viewModel, showAdminPanel = role == DomainConstants.ROLE_ADMIN)
+                                1 -> LedgerTab(viewModel, showAdminPanel = role == DomainConstants.ROLE_ADMIN || role == DomainConstants.ROLE_SUPER_ADMIN)
+                                2 -> ReportsTab(viewModel, showAdminPanel = role == DomainConstants.ROLE_ADMIN || role == DomainConstants.ROLE_SUPER_ADMIN)
                             }
                         }
                     }
@@ -555,6 +563,26 @@ fun DashboardContainer(viewModel: AppViewModel) {
 
                                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
 
+                                        if (role == DomainConstants.ROLE_ADMIN || role == DomainConstants.ROLE_SUPER_ADMIN) {
+                                            DropdownMenuItem(
+                                                text = { 
+                                                    Column {
+                                                        Text("Staff & Access Control", fontWeight = FontWeight.SemiBold)
+                                                        Text("Manage users, PINs & permissions", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                },
+                                                onClick = {
+                                                    showUserMenu = false
+                                                    showUserManagementDialog = true
+                                                },
+                                                leadingIcon = {
+                                                    Icon(Icons.Default.ManageAccounts, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                                }
+                                            )
+
+                                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+                                        }
+
                                         DropdownMenuItem(
                                             text = { Text("Sign Out / Lock", color = MaterialTheme.financialColors.expense, fontWeight = FontWeight.SemiBold) },
                                             onClick = {
@@ -680,8 +708,8 @@ fun DashboardContainer(viewModel: AppViewModel) {
                         ) { tab ->
                             when (tab) {
                                 0 -> StudentsTab(viewModel)
-                                1 -> LedgerTab(viewModel, showAdminPanel = role == DomainConstants.ROLE_ADMIN)
-                                2 -> ReportsTab(viewModel, showAdminPanel = role == DomainConstants.ROLE_ADMIN)
+                                1 -> LedgerTab(viewModel, showAdminPanel = role == DomainConstants.ROLE_ADMIN || role == DomainConstants.ROLE_SUPER_ADMIN)
+                                2 -> ReportsTab(viewModel, showAdminPanel = role == DomainConstants.ROLE_ADMIN || role == DomainConstants.ROLE_SUPER_ADMIN)
                             }
                         }
                     }
@@ -979,6 +1007,13 @@ Warm regards,
             onSaveConfig = { url, secret ->
                 viewModel.updateCloudSyncConfig(url, secret)
             }
+        )
+    }
+
+    if (showUserManagementDialog) {
+        UserManagementDialog(
+            viewModel = viewModel,
+            onDismiss = { showUserManagementDialog = false }
         )
     }
 

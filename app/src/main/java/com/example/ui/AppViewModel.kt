@@ -42,8 +42,103 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentUserRole = MutableStateFlow<String>(DomainConstants.ROLE_NONE)
     val currentUserRole: StateFlow<String> = _currentUserRole.asStateFlow()
 
+    private val _currentLoggedInEmail = MutableStateFlow<String>("")
+    val currentLoggedInEmail: StateFlow<String> = _currentLoggedInEmail.asStateFlow()
+
+    private val _currentLoggedInName = MutableStateFlow<String>("")
+    val currentLoggedInName: StateFlow<String> = _currentLoggedInName.asStateFlow()
+
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
+
+    // Real-time Users List
+    val usersList: StateFlow<List<AppUser>> = repository.allUsersFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * Dedicated Super Admin Login:
+     * Only 'bls.esakhel@gmail.com' is allowed.
+     */
+    fun loginSuperAdmin(email: String, key: String): Boolean {
+        _loginError.value = null
+        val cleanEmail = email.trim().lowercase()
+        val cleanKey = key.trim()
+
+        if (cleanEmail != DomainConstants.SUPER_ADMIN_EMAIL.lowercase()) {
+            _loginError.value = "Access Denied: Only Super Admin (${DomainConstants.SUPER_ADMIN_EMAIL}) is permitted."
+            return false
+        }
+
+        if (cleanKey != SecurityPreferences.DEFAULT_SUPER_ADMIN_KEY && cleanKey != "8888") {
+            _loginError.value = "Invalid Super Admin Security Key."
+            return false
+        }
+
+        _currentUserRole.value = DomainConstants.ROLE_SUPER_ADMIN
+        _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
+        _currentLoggedInName.value = "Super Admin"
+        repository.setCurrentRole(DomainConstants.ROLE_SUPER_ADMIN)
+        return true
+    }
+
+    /**
+     * Staff Member Login with Email & PIN:
+     * Checks user existence and Active status.
+     */
+    fun loginWithEmailAndPin(email: String, pin: String): Boolean {
+        _loginError.value = null
+        val cleanEmail = email.trim().lowercase()
+        val cleanPin = pin.trim()
+
+        // 1. Check if Super Admin logging in through email
+        if (cleanEmail == DomainConstants.SUPER_ADMIN_EMAIL.lowercase()) {
+            if (cleanPin == "8888" || cleanPin == SecurityPreferences.DEFAULT_SUPER_ADMIN_KEY) {
+                _currentUserRole.value = DomainConstants.ROLE_SUPER_ADMIN
+                _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
+                _currentLoggedInName.value = "Super Admin"
+                repository.setCurrentRole(DomainConstants.ROLE_SUPER_ADMIN)
+                return true
+            } else {
+                _loginError.value = "Invalid Super Admin authorization code."
+                return false
+            }
+        }
+
+        // 2. Check registered staff users from local/synced database
+        val allUsers = usersList.value
+        val matchedUser = allUsers.find { it.email.trim().equals(cleanEmail, ignoreCase = true) }
+
+        if (matchedUser != null) {
+            if (!matchedUser.isActive) {
+                _loginError.value = "Your account has been deactivated by Super Admin. Please contact administration."
+                return false
+            }
+
+            if (matchedUser.pin == cleanPin) {
+                _currentUserRole.value = matchedUser.role
+                _currentLoggedInEmail.value = matchedUser.email
+                _currentLoggedInName.value = matchedUser.name
+                repository.setCurrentRole(matchedUser.role)
+                return true
+            } else {
+                _loginError.value = "Incorrect PIN for ${matchedUser.email}."
+                return false
+            }
+        }
+
+        // 3. Fallback check legacy default PINs for quick startup if no users created yet
+        val legacyRole = securityPrefs.validatePin(cleanPin)
+        if (legacyRole != DomainConstants.ROLE_NONE) {
+            _currentUserRole.value = legacyRole
+            _currentLoggedInEmail.value = if (legacyRole == DomainConstants.ROLE_ADMIN) "admin@bls.school" else "accountant@bls.school"
+            _currentLoggedInName.value = legacyRole
+            repository.setCurrentRole(legacyRole)
+            return true
+        }
+
+        _loginError.value = "Account not found for $email. Please ask Super Admin to create your account."
+        return false
+    }
 
     fun login(pin: String): Boolean {
         _loginError.value = null
@@ -51,11 +146,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         return when (role) {
             DomainConstants.ROLE_ADMIN -> {
                 _currentUserRole.value = DomainConstants.ROLE_ADMIN
+                _currentLoggedInEmail.value = "admin@bls.school"
+                _currentLoggedInName.value = "Admin"
                 repository.setCurrentRole(DomainConstants.ROLE_ADMIN)
                 true
             }
             DomainConstants.ROLE_ACCOUNTANT -> {
                 _currentUserRole.value = DomainConstants.ROLE_ACCOUNTANT
+                _currentLoggedInEmail.value = "accountant@bls.school"
+                _currentLoggedInName.value = "Accountant"
                 repository.setCurrentRole(DomainConstants.ROLE_ACCOUNTANT)
                 true
             }
@@ -70,8 +169,68 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         _loginError.value = null
         securityPrefs.resetFailedAttempts()
         _currentUserRole.value = targetRole
+        _currentLoggedInEmail.value = if (targetRole == DomainConstants.ROLE_ADMIN) "admin@bls.school" else "accountant@bls.school"
+        _currentLoggedInName.value = targetRole
         repository.setCurrentRole(targetRole)
         return true
+    }
+
+    // ==================== USER MANAGEMENT ACTIONS (SUPER ADMIN) ====================
+
+    fun createStaffUser(name: String, email: String, role: String, pin: String, onSuccess: (AppUser) -> Unit, onError: (String) -> Unit) {
+        val cleanEmail = email.trim().lowercase()
+        val cleanName = name.trim()
+        val cleanPin = pin.trim()
+
+        if (cleanName.isBlank()) {
+            onError("Please enter staff member's full name.")
+            return
+        }
+        if (cleanEmail.isBlank() || !cleanEmail.contains("@")) {
+            onError("Please enter a valid email address.")
+            return
+        }
+        if (cleanPin.length != 4 || !cleanPin.all { it.isDigit() }) {
+            onError("PIN must be exactly 4 numeric digits.")
+            return
+        }
+
+        if (usersList.value.any { it.email.trim().equals(cleanEmail, ignoreCase = true) }) {
+            onError("A user with this email already exists.")
+            return
+        }
+
+        viewModelScope.launch {
+            val newUser = AppUser(
+                name = cleanName,
+                email = cleanEmail,
+                role = role,
+                pin = cleanPin,
+                isActive = true,
+                createdBy = "Super Admin"
+            )
+            repository.insertUser(newUser)
+            onSuccess(newUser)
+        }
+    }
+
+    fun toggleUserStatus(user: AppUser, isActive: Boolean) {
+        viewModelScope.launch {
+            repository.updateUserStatus(user.id, isActive)
+        }
+    }
+
+    fun deleteStaffUser(user: AppUser) {
+        viewModelScope.launch {
+            repository.deleteUser(user)
+        }
+    }
+
+    fun wipeAllDummyData(onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val result = repository.wipeAllDummyData()
+            onComplete(result)
+        }
     }
 
     fun updateSecurityPins(currentAdminPin: String, newAdminPin: String, newAccountantPin: String): Boolean {
@@ -92,6 +251,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun logout() {
         _currentUserRole.value = DomainConstants.ROLE_NONE
+        _currentLoggedInEmail.value = ""
+        _currentLoggedInName.value = ""
         repository.setCurrentRole("")
     }
 

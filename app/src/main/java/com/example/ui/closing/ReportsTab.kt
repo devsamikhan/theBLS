@@ -39,6 +39,7 @@ import com.example.ui.components.ClassRecoveryProgressSection
 import com.example.ui.components.CloudSyncSettingsDialog
 import com.example.ui.students.FeePaymentDialog
 import com.example.ui.theme.*
+import com.example.ui.closing.dialogs.UserManagementDialog
 import com.example.util.ReportExporter
 import com.example.util.AudioFeedback
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -77,6 +78,7 @@ fun ReportsTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
     var showStaffPayrollDialog by remember { mutableStateOf(false) }
     var showCustomDateRangeDialog by remember { mutableStateOf(false) }
     var showExpenseBreakdownDialog by remember { mutableStateOf(false) }
+    var showUserManagementDialog by remember { mutableStateOf(false) }
     var pendingRestoreJson by remember { mutableStateOf<String?>(null) }
     var postClosingBackupFile by remember { mutableStateOf<File?>(null) }
     val coroutineScope = rememberCoroutineScope()
@@ -262,6 +264,13 @@ fun ReportsTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
             onSaveConfig = { url, secret ->
                 viewModel.updateCloudSyncConfig(url, secret)
             }
+        )
+    }
+
+    if (showUserManagementDialog) {
+        UserManagementDialog(
+            viewModel = viewModel,
+            onDismiss = { showUserManagementDialog = false }
         )
     }
 
@@ -678,6 +687,7 @@ fun ReportsTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
                             onShowExpenseBreakdown = { showExpenseBreakdownDialog = true },
                             onShowSecuritySettings = { showSecuritySettingsDialog = true },
                             onShowCloudSyncSettings = { showCloudSyncDialog = true },
+                            onShowUserManagement = { showUserManagementDialog = true },
                             onGoogleDriveBackup = onGoogleDriveBackupClick,
                             onExportBackup = onExportBackupClick,
                             onRestoreBackup = onRestoreBackupClick,
@@ -733,6 +743,7 @@ fun ReportsTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
                             onShowExpenseBreakdown = { showExpenseBreakdownDialog = true },
                             onShowSecuritySettings = { showSecuritySettingsDialog = true },
                             onShowCloudSyncSettings = { showCloudSyncDialog = true },
+                            onShowUserManagement = { showUserManagementDialog = true },
                             onGoogleDriveBackup = onGoogleDriveBackupClick,
                             onExportBackup = onExportBackupClick,
                             onRestoreBackup = onRestoreBackupClick,
@@ -1128,6 +1139,7 @@ private fun AdminReportCenterCard(
     onShowExpenseBreakdown: () -> Unit = {},
     onShowSecuritySettings: () -> Unit = {},
     onShowCloudSyncSettings: () -> Unit = {},
+    onShowUserManagement: () -> Unit = {},
     onGoogleDriveBackup: () -> Unit = {},
     onExportBackup: () -> Unit = {},
     onRestoreBackup: () -> Unit = {},
@@ -1427,7 +1439,30 @@ private fun AdminReportCenterCard(
                         }
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+                    // Staff & User Access Control Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Staff & Access Management", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
+                            Text("Super Admin control: staff emails, PINs & active status", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Button(
+                            onClick = onShowUserManagement,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Icon(Icons.Default.ManageAccounts, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color.White)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Manage Staff", style = MaterialTheme.typography.labelSmall, color = Color.White)
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                     // Security Passcodes Row
                     Row(

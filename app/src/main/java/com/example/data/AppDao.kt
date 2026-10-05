@@ -137,5 +137,33 @@ interface AppDao {
 
     @Query("DELETE FROM daily_closings")
     suspend fun clearAllDailyClosings()
+
+    // App Users Management Queries
+    @Query("SELECT * FROM app_users ORDER BY id DESC")
+    fun getAllUsersFlow(): Flow<List<AppUser>>
+
+    @Query("SELECT * FROM app_users ORDER BY id DESC")
+    suspend fun getAllUsers(): List<AppUser>
+
+    @Query("SELECT * FROM app_users WHERE LOWER(email) = LOWER(:email) LIMIT 1")
+    suspend fun getUserByEmail(email: String): AppUser?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUser(user: AppUser): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUsers(users: List<AppUser>)
+
+    @Update
+    suspend fun updateUser(user: AppUser)
+
+    @Delete
+    suspend fun deleteUser(user: AppUser)
+
+    @Query("UPDATE app_users SET isActive = :isActive, updatedAt = :timestamp WHERE id = :id")
+    suspend fun updateUserStatus(id: Int, isActive: Boolean, timestamp: Long = System.currentTimeMillis())
+
+    @Query("DELETE FROM app_users")
+    suspend fun clearAllUsers()
 }
 

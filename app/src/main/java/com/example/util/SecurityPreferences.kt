@@ -22,6 +22,7 @@ class SecurityPreferences(context: Context) {
 
         const val DEFAULT_ADMIN_PIN = "8888"
         const val DEFAULT_ACCOUNTANT_PIN = "1111"
+        const val DEFAULT_SUPER_ADMIN_KEY = "BLS@SuperAdmin786"
         const val DEFAULT_FIREBASE_URL = "https://bls-school-system-default-rtdb.firebaseio.com"
         private const val PIN_SALT = "BLS_LEDGER_SALT_2026#"
         private const val MAX_FAILED_ATTEMPTS = 5

@@ -1,9 +1,12 @@
 package com.example.data
 
 object DomainConstants {
+    const val ROLE_SUPER_ADMIN = "Super Admin"
     const val ROLE_ADMIN = "Admin"
     const val ROLE_ACCOUNTANT = "Accountant"
     const val ROLE_NONE = "None"
+
+    const val SUPER_ADMIN_EMAIL = "bls.esakhel@gmail.com"
 
     const val PIN_ADMIN = "8888"
     const val PIN_ACCOUNTANT = "1111"

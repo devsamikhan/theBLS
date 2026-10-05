@@ -96,3 +96,21 @@ data class DailyClosing(
     val closedAt: Long = System.currentTimeMillis()
 )
 
+@Entity(
+    tableName = "app_users",
+    indices = [
+        Index(value = ["email"], unique = true)
+    ]
+)
+data class AppUser(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val name: String,
+    val email: String,
+    val role: String, // "Admin" or "Accountant"
+    val pin: String, // 4-digit PIN
+    val isActive: Boolean = true,
+    val createdBy: String = "Super Admin",
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+)
+
