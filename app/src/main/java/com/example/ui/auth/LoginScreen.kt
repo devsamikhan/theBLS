@@ -267,10 +267,10 @@ fun LoginScreen(
                                 superAdminKeyInput = it
                                 localError = null
                             },
-                            label = { Text("Master Passkey or PIN") },
-                            placeholder = { Text("Enter Super Admin Key") },
+                            label = { Text("Master Passkey") },
+                            placeholder = { Text("Enter Master Passkey") },
                             leadingIcon = {
-                                Icon(Icons.Default.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Key, contentDescription = null, tint = Color(0xFFE65100), modifier = Modifier.size(18.dp))
                             },
                             trailingIcon = {
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -285,10 +285,11 @@ fun LoginScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(
                                 onDone = {
-                                    val success = onSuperAdminLoginAttempt?.invoke(com.example.data.DomainConstants.SUPER_ADMIN_EMAIL, superAdminKeyInput)
-                                        ?: onLoginAttempt(superAdminKeyInput)
+                                    val trimmedKey = superAdminKeyInput.trim()
+                                    val success = onSuperAdminLoginAttempt?.invoke(com.example.data.DomainConstants.SUPER_ADMIN_EMAIL, trimmedKey)
+                                        ?: onLoginAttempt(trimmedKey)
                                     if (!success) {
-                                        localError = "Invalid Super Admin Security Key."
+                                        localError = "Invalid Super Admin Key. Please check the master passkey."
                                     }
                                 }
                             ),
@@ -296,14 +297,47 @@ fun LoginScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
 
+                        // Super Admin Error Banner
+                        val activeSuperAdminError = localError ?: errorMessage
+                        if (activeSuperAdminError != null) {
+                            Surface(
+                                color = MaterialTheme.financialColors.expenseContainer.copy(alpha = 0.35f),
+                                border = BorderStroke(1.dp, MaterialTheme.financialColors.expense.copy(alpha = 0.4f)),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Warning,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.financialColors.expense,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        activeSuperAdminError,
+                                        color = MaterialTheme.financialColors.expense,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Button(
                             onClick = {
-                                val success = onSuperAdminLoginAttempt?.invoke(com.example.data.DomainConstants.SUPER_ADMIN_EMAIL, superAdminKeyInput)
-                                    ?: onLoginAttempt(superAdminKeyInput)
+                                val trimmedKey = superAdminKeyInput.trim()
+                                val success = onSuperAdminLoginAttempt?.invoke(com.example.data.DomainConstants.SUPER_ADMIN_EMAIL, trimmedKey)
+                                    ?: onLoginAttempt(trimmedKey)
                                 if (!success) {
-                                    localError = "Invalid Super Admin Security Key."
+                                    localError = "Invalid Super Admin Key. Please check the master passkey."
                                 }
                             },
                             modifier = Modifier.fillMaxWidth().height(46.dp),

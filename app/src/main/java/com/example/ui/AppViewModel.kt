@@ -69,7 +69,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             return false
         }
 
-        if (cleanKey != SecurityPreferences.DEFAULT_SUPER_ADMIN_KEY && cleanKey != "8888") {
+        if (cleanKey != SecurityPreferences.DEFAULT_SUPER_ADMIN_KEY) {
             _loginError.value = "Invalid Super Admin Security Key."
             return false
         }
@@ -92,14 +92,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
         // 1. Check if Super Admin logging in through email
         if (cleanEmail == DomainConstants.SUPER_ADMIN_EMAIL.lowercase()) {
-            if (cleanPin == "8888" || cleanPin == SecurityPreferences.DEFAULT_SUPER_ADMIN_KEY) {
+            if (cleanPin == SecurityPreferences.DEFAULT_SUPER_ADMIN_KEY) {
                 _currentUserRole.value = DomainConstants.ROLE_SUPER_ADMIN
                 _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
                 _currentLoggedInName.value = "Super Admin"
                 repository.setCurrentRole(DomainConstants.ROLE_SUPER_ADMIN)
                 return true
             } else {
-                _loginError.value = "Invalid Super Admin authorization code."
+                _loginError.value = "Invalid Super Admin Security Key."
                 return false
             }
         }

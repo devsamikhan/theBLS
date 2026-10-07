@@ -53,6 +53,8 @@ import java.util.*
 fun BLSApp(viewModel: AppViewModel) {
     val currentRole by viewModel.currentUserRole.collectAsStateWithLifecycle()
 
+    val loginError by viewModel.loginError.collectAsStateWithLifecycle()
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -71,7 +73,8 @@ fun BLSApp(viewModel: AppViewModel) {
                     },
                     onSuperAdminLoginAttempt = { email, key ->
                         viewModel.loginSuperAdmin(email, key)
-                    }
+                    },
+                    errorMessage = loginError
                 )
                 else -> DashboardContainer(viewModel = viewModel)
             }
