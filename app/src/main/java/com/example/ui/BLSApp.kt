@@ -365,13 +365,13 @@ fun DashboardContainer(viewModel: AppViewModel) {
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     Surface(
-                                        shape = RoundedCornerShape(10.dp),
+                                        shape = RoundedCornerShape(12.dp),
                                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
                                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                                        modifier = Modifier.size(36.dp)
+                                        modifier = Modifier.size(38.dp)
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
-                                            BLSLogo(customSize = 24.dp)
+                                            BLSLogo(customSize = 25.dp)
                                         }
                                     }
                                     Column {
@@ -390,10 +390,12 @@ fun DashboardContainer(viewModel: AppViewModel) {
                                                     viewModel.flushOfflineSyncQueue()
                                                 }
                                             },
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = Color.Transparent
+                                            shape = RoundedCornerShape(100.dp),
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
                                         ) {
                                             Row(
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                                             ) {
@@ -492,7 +494,7 @@ fun DashboardContainer(viewModel: AppViewModel) {
                                 Box {
                                     Surface(
                                         onClick = { showUserMenu = true },
-                                        shape = RoundedCornerShape(16.dp),
+                                        shape = RoundedCornerShape(100.dp),
                                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                                         modifier = Modifier.height(32.dp)

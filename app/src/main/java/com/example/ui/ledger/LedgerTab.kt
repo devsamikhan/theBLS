@@ -1137,7 +1137,7 @@ fun LedgerEntryRow(
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -1155,8 +1155,8 @@ fun LedgerEntryRow(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
-                        .background(containerColor, RoundedCornerShape(10.dp)),
+                        .size(42.dp)
+                        .background(containerColor, RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -1192,16 +1192,16 @@ fun LedgerEntryRow(
 
                         if (transaction.voucherNo.isNotBlank()) {
                             Surface(
-                                color = if (isIncome) Color(0xFFE8F5E9) else Color(0xFFFFF3E0),
-                                shape = RoundedCornerShape(4.dp),
-                                border = BorderStroke(1.dp, if (isIncome) Color(0xFFA5D6A7) else Color(0xFFFFCC80))
+                                color = containerColor.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(6.dp),
+                                border = BorderStroke(1.dp, accentColor.copy(alpha = 0.3f))
                             ) {
                                 Text(
                                     text = transaction.voucherNo,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isIncome) Color(0xFF1B5E20) else Color(0xFFE65100),
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                    color = accentColor,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
                                 )
                             }
                         }
@@ -1285,15 +1285,16 @@ fun LedgerEntryRow(
                     if (runningBalance != null) {
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                             modifier = Modifier.padding(top = 2.dp)
                         ) {
                             Text(
                                 text = "Bal: Rs. ${runningBalance.toInt()}",
                                 fontSize = 9.5.sp,
-                                fontWeight = FontWeight.Medium,
+                                fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
                             )
                         }
                     }
@@ -1307,7 +1308,7 @@ fun LedgerEntryRow(
                         Icon(
                             Icons.Default.Print,
                             contentDescription = "Print Fee Slip",
-                            tint = Color(0xFF2E7D32),
+                            tint = MaterialTheme.financialColors.cash,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -1319,7 +1320,7 @@ fun LedgerEntryRow(
                         Icon(
                             Icons.Default.ReceiptLong,
                             contentDescription = "Print Expense Voucher / Payslip",
-                            tint = if (transaction.category == DomainConstants.CAT_STAFF_SALARY) Color(0xFF1B365D) else MaterialTheme.financialColors.expense,
+                            tint = if (transaction.category == DomainConstants.CAT_STAFF_SALARY) MaterialTheme.colorScheme.primary else MaterialTheme.financialColors.expense,
                             modifier = Modifier.size(16.dp)
                         )
                     }

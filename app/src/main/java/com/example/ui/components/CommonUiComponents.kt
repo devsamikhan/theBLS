@@ -124,25 +124,36 @@ private fun LedgerSubCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-        shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
         modifier = modifier
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    letterSpacing = 0.5.sp
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(actionColor, CircleShape)
+                    )
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 10.sp,
+                        letterSpacing = 0.5.sp
+                    )
+                }
                 if (actionText != null && onClick != null) {
                     Text(
                         text = actionText,
@@ -159,7 +170,7 @@ private fun LedgerSubCard(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 14.5.sp
+                fontSize = 15.sp
             )
         }
     }
@@ -178,9 +189,9 @@ fun DailyClosingBalanceCard(
         SimpleDateFormat("MMMM dd", Locale.US).format(Date()).uppercase() 
     }
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
             .fillMaxWidth()
@@ -192,23 +203,34 @@ fun DailyClosingBalanceCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Daily Closing Balance",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .background(MaterialTheme.financialColors.cash, CircleShape)
+                    )
+                    Text(
+                        text = "Net Balance Today",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Surface(
                     shape = RoundedCornerShape(100.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
                 ) {
                     Text(
                         text = dateStr,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
+                        fontSize = 9.5.sp
                     )
                 }
             }
@@ -217,16 +239,16 @@ fun DailyClosingBalanceCard(
                 text = "Rs. ${String.format(Locale.US, "%,.0f", netBalance)}",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = MaterialTheme.colorScheme.onSurface,
                 letterSpacing = (-0.75).sp
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val isNarrow = maxWidth < 330.dp
                 if (isNarrow) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         LedgerSubCard(
-                            title = "CASH LEDGER",
+                            title = "CASH IN HAND",
                             actionText = if (onCashClick != null) "VIEW →" else null,
                             actionColor = MaterialTheme.financialColors.cash,
                             amount = cashBalance,
@@ -234,7 +256,7 @@ fun DailyClosingBalanceCard(
                             modifier = Modifier.fillMaxWidth()
                         )
                         LedgerSubCard(
-                            title = "BANK LEDGER",
+                            title = "BANK ACCOUNT",
                             actionText = if (onBankClick != null) "VIEW →" else null,
                             actionColor = MaterialTheme.financialColors.bank,
                             amount = bankBalance,
@@ -245,10 +267,10 @@ fun DailyClosingBalanceCard(
                 } else {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         LedgerSubCard(
-                            title = "CASH LEDGER",
+                            title = "CASH IN HAND",
                             actionText = if (onCashClick != null) "VIEW →" else null,
                             actionColor = MaterialTheme.financialColors.cash,
                             amount = cashBalance,
@@ -256,7 +278,7 @@ fun DailyClosingBalanceCard(
                             modifier = Modifier.weight(1f)
                         )
                         LedgerSubCard(
-                            title = "BANK LEDGER",
+                            title = "BANK ACCOUNT",
                             actionText = if (onBankClick != null) "VIEW →" else null,
                             actionColor = MaterialTheme.financialColors.bank,
                             amount = bankBalance,
@@ -711,15 +733,15 @@ fun FinanceSummaryCard(
 ) {
     Card(
         modifier = modifier.testTag("finance_card_${title.lowercase().replace(" ", "_")}"),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.2f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
+                .padding(12.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -729,46 +751,54 @@ fun FinanceSummaryCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(26.dp)
-                        .background(contentColor.copy(alpha = 0.12f), RoundedCornerShape(6.dp)),
+                        .size(30.dp)
+                        .background(contentColor.copy(alpha = 0.12f), RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         tint = contentColor,
-                        modifier = Modifier.size(15.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
                 
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontSize = 8.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = contentColor.copy(alpha = 0.85f),
-                    textAlign = TextAlign.End
-                )
+                Surface(
+                    shape = RoundedCornerShape(100.dp),
+                    color = containerColor.copy(alpha = 0.45f),
+                    border = BorderStroke(0.5.dp, contentColor.copy(alpha = 0.25f))
+                ) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 8.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = contentColor,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        textAlign = TextAlign.End
+                    )
+                }
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             
             Column {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelMedium,
-                    fontSize = 10.5.sp,
+                    fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = value,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 13.sp,
+                    fontSize = 14.5.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

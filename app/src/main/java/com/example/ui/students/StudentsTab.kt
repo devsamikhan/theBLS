@@ -1217,7 +1217,7 @@ fun StudentRowCard(
             .testTag("student_row_${student.id}"),
         colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -1229,8 +1229,8 @@ fun StudentRowCard(
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (paidThisMonth) Color(0xFFE8F5E9) else Color(0xFFE0F2FE)),
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (paidThisMonth) MaterialTheme.financialColors.cashContainer else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
                     contentAlignment = Alignment.Center
                 ) {
                     if (student.photoUri.isNotBlank()) {
@@ -1240,14 +1240,14 @@ fun StudentRowCard(
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(14.dp))
                         )
                     } else {
                         Text(
                             text = student.studentName.take(1).uppercase(),
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp,
-                            color = if (paidThisMonth) Color(0xFF2E7D32) else Color(0xFF0284C7)
+                            color = if (paidThisMonth) MaterialTheme.financialColors.cash else MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -1302,45 +1302,45 @@ fun StudentRowCard(
                     }
                     if (advanceWallet > 0.0) {
                         Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = Color(0xFFE0F2FE),
-                            border = BorderStroke(1.dp, Color(0xFF7DD3FC).copy(alpha = 0.6f))
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                         ) {
                             Text(
                                 text = "Adv: Rs. ${advanceWallet.toInt()}",
                                 fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0369A1),
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
                             )
                         }
                     }
                     if (paidThisMonth) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = Color(0xFFDCFCE7),
-                            border = BorderStroke(1.dp, Color(0xFF86EFAC).copy(alpha = 0.5f))
+                            color = MaterialTheme.financialColors.cashContainer,
+                            border = BorderStroke(1.dp, MaterialTheme.financialColors.cash.copy(alpha = 0.3f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF166534), modifier = Modifier.size(11.dp))
-                                Text("Paid", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF166534))
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.financialColors.cash, modifier = Modifier.size(11.dp))
+                                Text("Paid", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.cash)
                             }
                         }
                     } else {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = Color(0xFFFEE2E2),
-                            border = BorderStroke(1.dp, Color(0xFFFCA5A5).copy(alpha = 0.5f))
+                            color = MaterialTheme.financialColors.expenseContainer,
+                            border = BorderStroke(1.dp, MaterialTheme.financialColors.expense.copy(alpha = 0.3f))
                         ) {
                             Text(
                                 text = "Rs. ${discountedMonthly.toInt()} Due",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF991B1B),
+                                color = MaterialTheme.financialColors.expense,
                                 modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                             )
                         }
@@ -1375,12 +1375,14 @@ fun StudentRowCard(
                                 },
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                                 shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFFDCFCE7)),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.financialColors.cashContainer.copy(alpha = 0.7f)
+                                ),
                                 modifier = Modifier.height(30.dp)
                             ) {
-                                Icon(Icons.Default.Send, contentDescription = null, tint = Color(0xFF15803D), modifier = Modifier.size(12.dp))
+                                Icon(Icons.Default.Send, contentDescription = null, tint = MaterialTheme.financialColors.cash, modifier = Modifier.size(12.dp))
                                 Spacer(modifier = Modifier.width(3.dp))
-                                Text("WhatsApp", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF15803D))
+                                Text("WhatsApp", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.cash)
                             }
                         }
                         if (onQuickFee != null) {

@@ -21,6 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -997,9 +998,11 @@ private fun ReportGridTile(
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = modifier.clickable { item.onPrimaryAction() }
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { item.onPrimaryAction() }
     ) {
         Column(
             modifier = Modifier
@@ -1015,11 +1018,11 @@ private fun ReportGridTile(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .background(item.iconBgColor, RoundedCornerShape(10.dp)),
+                        .size(38.dp)
+                        .background(item.iconBgColor, RoundedCornerShape(11.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(item.icon, contentDescription = null, tint = item.iconTintColor, modifier = Modifier.size(18.dp))
+                    Icon(item.icon, contentDescription = null, tint = item.iconTintColor, modifier = Modifier.size(19.dp))
                 }
                 Surface(
                     color = item.iconBgColor,
