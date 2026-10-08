@@ -78,6 +78,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
         _currentLoggedInName.value = "Super Admin"
         repository.setCurrentRole(DomainConstants.ROLE_SUPER_ADMIN)
+        com.example.util.ReportExporter.setActiveOperator("Super Admin", DomainConstants.ROLE_SUPER_ADMIN)
         return true
     }
 
@@ -97,6 +98,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
                 _currentLoggedInName.value = "Super Admin"
                 repository.setCurrentRole(DomainConstants.ROLE_SUPER_ADMIN)
+                com.example.util.ReportExporter.setActiveOperator("Super Admin", DomainConstants.ROLE_SUPER_ADMIN)
                 return true
             } else {
                 _loginError.value = "Invalid Super Admin Security Key."
@@ -119,6 +121,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 _currentLoggedInEmail.value = matchedUser.email
                 _currentLoggedInName.value = matchedUser.name
                 repository.setCurrentRole(matchedUser.role)
+                com.example.util.ReportExporter.setActiveOperator(matchedUser.name, matchedUser.role)
                 return true
             } else {
                 _loginError.value = "Incorrect PIN for ${matchedUser.email}."
@@ -145,6 +148,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
             _currentLoggedInName.value = "Super Admin"
             repository.setCurrentRole(DomainConstants.ROLE_SUPER_ADMIN)
+            com.example.util.ReportExporter.setActiveOperator("Super Admin", DomainConstants.ROLE_SUPER_ADMIN)
             return true
         }
 
@@ -155,6 +159,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             _currentLoggedInEmail.value = matchedUser.email
             _currentLoggedInName.value = matchedUser.name
             repository.setCurrentRole(matchedUser.role)
+            com.example.util.ReportExporter.setActiveOperator(matchedUser.name, matchedUser.role)
             return true
         }
 
@@ -163,6 +168,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
         _currentLoggedInName.value = "Super Admin"
         repository.setCurrentRole(DomainConstants.ROLE_SUPER_ADMIN)
+        com.example.util.ReportExporter.setActiveOperator("Super Admin", DomainConstants.ROLE_SUPER_ADMIN)
         return true
     }
 
@@ -245,6 +251,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         _currentLoggedInEmail.value = ""
         _currentLoggedInName.value = ""
         repository.setCurrentRole("")
+        com.example.util.ReportExporter.setActiveOperator("", "")
     }
 
     // =================================================================
