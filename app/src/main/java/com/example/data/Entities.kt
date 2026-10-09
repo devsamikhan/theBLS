@@ -53,7 +53,8 @@ data class Student(
         Index(value = ["isIncome"]),
         Index(value = ["category"]),
         Index(value = ["isDeleted"]),
-        Index(value = ["monthOfFee", "studentId"])
+        Index(value = ["monthOfFee", "studentId"]),
+        Index(value = ["teacherId"])
     ]
 )
 data class Transaction(
@@ -69,11 +70,44 @@ data class Transaction(
     val recordedBy: String = "Accountant", // "Admin" or "Accountant"
     val description: String = "",
     val voucherNo: String = "", // e.g. "BLS-REC-2026-0001" or "BLS-EXP-2026-0001"
+    val payeeName: String = "", // Payee / Vendor / Teacher name for expenses
+    val invoiceNo: String = "", // Bill / Receipt / Invoice #
+    val teacherId: Int? = null, // Linked teacher ID for salary expenses
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val isDeleted: Boolean = false,
     val syncStatus: String = "SYNCED"
 )
+
+@Entity(
+    tableName = "teachers",
+    indices = [
+        Index(value = ["name"]),
+        Index(value = ["designation"]),
+        Index(value = ["contactNumber"]),
+        Index(value = ["status"]),
+        Index(value = ["isDeleted"])
+    ]
+)
+data class Teacher(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val name: String,
+    val designation: String, // e.g. "Senior Science Teacher", "English Teacher", "Headmaster"
+    val contactNumber: String,
+    val cnic: String = "",
+    val qualification: String = "",
+    val monthlySalary: Double,
+    val joiningDate: Long = System.currentTimeMillis(),
+    val status: String = "Active", // "Active", "Left"
+    val photoUri: String = "",
+    val address: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val createdBy: String = "Staff",
+    val isDeleted: Boolean = false,
+    val syncStatus: String = "SYNCED"
+)
+
 
 @Entity(
     tableName = "daily_closings",

@@ -128,13 +128,66 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
         Triple(today, week, month)
     }
 
+    var expenseSuccessTx by remember { mutableStateOf<Transaction?>(null) }
+
     if (showExpenseDialog) {
         AddExpenseDialog(
             onDismiss = { showExpenseDialog = false },
-            onSubmit = { amount, category, mode, details ->
-                viewModel.addExpense(category, amount, mode, details)
-                AudioFeedback.playSuccessChime()
+            onSubmit = { amount, category, mode, details, payee, invNo ->
+                viewModel.addExpense(
+                    category = category,
+                    amount = amount,
+                    mode = mode,
+                    desc = details,
+                    payeeName = payee,
+                    invoiceNo = invNo,
+                    onSuccess = { savedTx ->
+                        AudioFeedback.playSuccessChime()
+                        expenseSuccessTx = savedTx
+                    }
+                )
                 showExpenseDialog = false
+            }
+        )
+    }
+
+    expenseSuccessTx?.let { tx ->
+        AlertDialog(
+            onDismissRequest = { expenseSuccessTx = null },
+            icon = { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.financialColors.cash, modifier = Modifier.size(36.dp)) },
+            title = { Text("Expense Recorded Successfully!", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Voucher #: ${tx.voucherNo}", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                    Text("Amount: Rs. ${tx.amount.toInt()} (${tx.paymentMode})")
+                    Text("Head: ${tx.category}")
+                    if (tx.payeeName.isNotBlank()) Text("Paid To: ${tx.payeeName}")
+                    if (tx.invoiceNo.isNotBlank()) Text("Bill / Inv #: ${tx.invoiceNo}")
+                    if (tx.description.isNotBlank()) Text("Details: ${tx.description}", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val file = ReportExporter.exportExpensePaymentVoucherPdf(context, tx)
+                        if (file != null) {
+                            val dest = ReportExporter.savePdfToDownloads(context, file, "BLS_Voucher_${tx.voucherNo.ifBlank { tx.id.toString() }}")
+                            Toast.makeText(context, "Saved to Downloads! ${dest.pathMessage}", Toast.LENGTH_LONG).show()
+                            ReportExporter.sharePdf(context, file)
+                        }
+                        expenseSuccessTx = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Print Voucher PDF")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { expenseSuccessTx = null }) {
+                    Text("Done")
+                }
             }
         )
     }
@@ -471,6 +524,38 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
                         }
                     }
 
+                    val isExpense = activeLedgerType == "Expense Hub"
+                    Surface(
+                        modifier = Modifier
+                            .weight(1.1f)
+                            .height(38.dp)
+                            .clip(RoundedCornerShape(9.dp))
+                            .clickable { activeLedgerType = "Expense Hub" },
+                        shape = RoundedCornerShape(9.dp),
+                        color = if (isExpense) MaterialTheme.colorScheme.surface else Color.Transparent,
+                        shadowElevation = if (isExpense) 1.dp else 0.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Default.ReceiptLong,
+                                contentDescription = null,
+                                tint = if (isExpense) MaterialTheme.financialColors.expense else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                "Expense Hub",
+                                fontSize = 11.sp,
+                                fontWeight = if (isExpense) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isExpense) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
                     val isAll = activeLedgerType == "All"
                     Surface(
                         modifier = Modifier
@@ -666,6 +751,7 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
         val activeList = when (activeLedgerType) {
             DomainConstants.MODE_CASH -> cashTx
             DomainConstants.MODE_BANK -> bankTx
+            "Expense Hub" -> transactions.filter { !it.isIncome }
             else -> transactions
         }
 
@@ -685,6 +771,9 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
                     (tx.studentName?.contains(ledgerSearchQuery, ignoreCase = true) == true) ||
                     tx.category.contains(ledgerSearchQuery, ignoreCase = true) ||
                     tx.description.contains(ledgerSearchQuery, ignoreCase = true) ||
+                    tx.payeeName.contains(ledgerSearchQuery, ignoreCase = true) ||
+                    tx.invoiceNo.contains(ledgerSearchQuery, ignoreCase = true) ||
+                    tx.voucherNo.contains(ledgerSearchQuery, ignoreCase = true) ||
                     tx.amount.toInt().toString().contains(ledgerSearchQuery)
                 }
                 matchesDate && matchesHead && matchesSearch
@@ -1233,15 +1322,30 @@ fun LedgerEntryRow(
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
-                    } else if (!isIncome && transaction.description.isNotBlank()) {
-                        Text(
-                            text = transaction.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
+                    } else if (!isIncome) {
+                        val expenseSubtitle = buildString {
+                            if (transaction.payeeName.isNotBlank()) {
+                                append("To: ${transaction.payeeName}")
+                            }
+                            if (transaction.invoiceNo.isNotBlank()) {
+                                if (isNotEmpty()) append(" • ")
+                                append("Inv: ${transaction.invoiceNo}")
+                            }
+                            if (transaction.description.isNotBlank()) {
+                                if (isNotEmpty()) append(" • ")
+                                append(transaction.description)
+                            }
+                        }
+                        if (expenseSubtitle.isNotBlank()) {
+                            Text(
+                                text = expenseSubtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 11.sp,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(2.dp))
@@ -1346,11 +1450,16 @@ fun LedgerEntryRow(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddExpenseDialog(onDismiss: () -> Unit, onSubmit: (Double, String, String, String) -> Unit) {
+fun AddExpenseDialog(
+    onDismiss: () -> Unit,
+    onSubmit: (amount: Double, category: String, mode: String, details: String, payeeName: String, invoiceNo: String) -> Unit
+) {
     var expenseAmount by remember { mutableStateOf("") }
     var expenseCategory by remember { mutableStateOf("") }
     var categoryExpanded by remember { mutableStateOf(false) }
     var paymentMode by remember { mutableStateOf(DomainConstants.MODE_CASH) }
+    var payeeNameInput by remember { mutableStateOf("") }
+    var invoiceNoInput by remember { mutableStateOf("") }
     var descInput by remember { mutableStateOf("") }
 
     val categories = DomainConstants.EXPENSE_CATEGORIES
@@ -1488,6 +1597,26 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onSubmit: (Double, String, String, S
                     )
                 }
 
+                // Payee / Recipient Name
+                OutlinedTextField(
+                    value = payeeNameInput,
+                    onValueChange = { payeeNameInput = it },
+                    label = { Text("Paid To / Vendor / Person (Optional)") },
+                    placeholder = { Text("e.g. LESCO / Ali Stationery / Mr. Imran") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                // Bill / Invoice Number
+                OutlinedTextField(
+                    value = invoiceNoInput,
+                    onValueChange = { invoiceNoInput = it },
+                    label = { Text("Bill / Invoice / Receipt # (Optional)") },
+                    placeholder = { Text("e.g. INV-9812 / Bill-044") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
                 Text("Deduct balance from:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1563,7 +1692,7 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onSubmit: (Double, String, String, S
                 }
 
                 val amt = expenseAmount.toDoubleOrNull() ?: 0.0
-                val canSubmit = amt > 0 && expenseCategory.isNotBlank() && (descInput.isNotBlank() || staffName.isNotBlank() || customExpenseHead.isNotBlank())
+                val canSubmit = amt > 0 && expenseCategory.isNotBlank() && (descInput.isNotBlank() || staffName.isNotBlank() || customExpenseHead.isNotBlank() || payeeNameInput.isNotBlank())
                 Button(
                     onClick = {
                         val finalCategory = if (isOtherCategory && customExpenseHead.isNotBlank()) customExpenseHead.trim() else expenseCategory
@@ -1574,8 +1703,16 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onSubmit: (Double, String, String, S
                         } else {
                             descInput
                         }
-                        if (amt > 0 && finalCategory.isNotBlank() && (finalDesc.isNotBlank() || staffName.isNotBlank() || customExpenseHead.isNotBlank())) {
-                            onSubmit(amt, finalCategory, paymentMode, if (finalDesc.isNotBlank()) finalDesc else "Expense disbursement")
+                        if (amt > 0 && finalCategory.isNotBlank()) {
+                            val resolvedPayee = if (isSalaryCategory && payeeNameInput.isBlank() && staffName.isNotBlank()) staffName.trim() else payeeNameInput.trim()
+                            onSubmit(
+                                amt,
+                                finalCategory,
+                                paymentMode,
+                                if (finalDesc.isNotBlank()) finalDesc else "Expense disbursement",
+                                resolvedPayee,
+                                invoiceNoInput.trim()
+                            )
                         }
                     },
                     modifier = Modifier

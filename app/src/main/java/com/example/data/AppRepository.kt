@@ -232,6 +232,50 @@ class AppRepository(private val appDao: AppDao) {
         appDao.clearAllStudents()
         appDao.clearAllTransactions()
         appDao.clearAllDailyClosings()
+        appDao.clearAllTeachers()
         return syncManager.wipeCloudData()
     }
+
+    // Teachers Management
+    val allTeachersFlow: Flow<List<Teacher>> = appDao.getAllTeachersFlow()
+
+    suspend fun getAllTeachers(): List<Teacher> = appDao.getAllTeachers()
+
+    suspend fun getTeacherById(id: Int): Teacher? = appDao.getTeacherById(id)
+
+    suspend fun insertTeacher(teacher: Teacher): Long {
+        val now = System.currentTimeMillis()
+        val teacherWithAudit = teacher.copy(
+            createdAt = if (teacher.createdAt == 0L) now else teacher.createdAt,
+            updatedAt = now,
+            isDeleted = false,
+            syncStatus = DomainConstants.SYNC_STATUS_SYNCED
+        )
+        val rowId = appDao.insertTeacher(teacherWithAudit)
+        val target = if (teacherWithAudit.id == 0) teacherWithAudit.copy(id = rowId.toInt()) else teacherWithAudit
+        syncManager.pushTeacher(target)
+        return rowId
+    }
+
+    suspend fun updateTeacher(teacher: Teacher) {
+        val updated = teacher.copy(updatedAt = System.currentTimeMillis())
+        appDao.updateTeacher(updated)
+        syncManager.pushTeacher(updated)
+    }
+
+    suspend fun deleteTeacher(teacher: Teacher) {
+        appDao.softDeleteTeacher(teacher.id)
+        syncManager.deleteTeacherFromCloud(teacher.id)
+    }
+
+    suspend fun updateTeacherStatus(teacherId: Int, status: String) {
+        appDao.updateTeacherStatus(teacherId, status)
+        appDao.getTeacherById(teacherId)?.let { syncManager.pushTeacher(it) }
+    }
+
+    fun getTransactionsByTeacher(teacherId: Int): Flow<List<Transaction>> =
+        appDao.getTransactionsByTeacherFlow(teacherId)
+
+    suspend fun getTeacherSalaryTransactions(teacherId: Int): List<Transaction> =
+        appDao.getTransactionsByTeacher(teacherId)
 }

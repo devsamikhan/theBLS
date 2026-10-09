@@ -145,13 +145,18 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
                 pushStudent(s)
                 appDao.markStudentSynced(s.id)
             }
+            val pendingTeachers = appDao.getPendingSyncTeachers()
+            for (tch in pendingTeachers) {
+                pushTeacher(tch)
+                appDao.markTeacherSynced(tch.id)
+            }
             val pendingTxs = appDao.getPendingSyncTransactions()
             for (t in pendingTxs) {
                 pushTransaction(t)
                 appDao.markTransactionSynced(t.id)
             }
-            if (pendingStudents.isNotEmpty() || pendingTxs.isNotEmpty()) {
-                Log.d(TAG, "Flushed ${pendingStudents.size} students and ${pendingTxs.size} transactions to Firebase.")
+            if (pendingStudents.isNotEmpty() || pendingTeachers.isNotEmpty() || pendingTxs.isNotEmpty()) {
+                Log.d(TAG, "Flushed ${pendingStudents.size} students, ${pendingTeachers.size} teachers and ${pendingTxs.size} transactions to Firebase.")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error flushing pending sync queue: ${e.message}")
@@ -210,6 +215,48 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
         }
     }
 
+    fun pushTeacher(teacher: Teacher, scope: CoroutineScope = CoroutineScope(Dispatchers.IO)) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val json = JSONObject().apply {
+                    put("id", teacher.id)
+                    put("name", teacher.name)
+                    put("designation", teacher.designation)
+                    put("contactNumber", teacher.contactNumber)
+                    put("cnic", teacher.cnic)
+                    put("qualification", teacher.qualification)
+                    put("monthlySalary", teacher.monthlySalary)
+                    put("joiningDate", teacher.joiningDate)
+                    put("status", teacher.status)
+                    put("photoUri", teacher.photoUri)
+                    put("address", teacher.address)
+                    put("createdAt", teacher.createdAt)
+                    put("updatedAt", teacher.updatedAt)
+                    put("createdBy", teacher.createdBy)
+                    put("isDeleted", teacher.isDeleted)
+                }
+                httpPut(getEndpointUrl("teachers/${teacher.id}.json"), json.toString())
+                _syncState.value = SyncState.SYNCED
+                _lastSyncedAt.value = System.currentTimeMillis()
+                Log.d(TAG, "Teacher ${teacher.id} pushed to Firebase successfully.")
+            } catch (e: Exception) {
+                _syncState.value = SyncState.OFFLINE
+                Log.e(TAG, "Error pushing teacher: ${e.message}")
+            }
+        }
+    }
+
+    fun deleteTeacherFromCloud(teacherId: Int, scope: CoroutineScope = CoroutineScope(Dispatchers.IO)) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                httpDelete(getEndpointUrl("teachers/$teacherId.json"))
+                Log.d(TAG, "Teacher $teacherId deleted from Firebase.")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting teacher from cloud: ${e.message}")
+            }
+        }
+    }
+
     fun pushTransaction(transaction: Transaction, scope: CoroutineScope = CoroutineScope(Dispatchers.IO)) {
         scope.launch(Dispatchers.IO) {
             try {
@@ -226,6 +273,9 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
                     put("description", transaction.description)
                     put("monthOfFee", transaction.monthOfFee ?: JSONObject.NULL)
                     put("voucherNo", transaction.voucherNo)
+                    put("payeeName", transaction.payeeName)
+                    put("invoiceNo", transaction.invoiceNo)
+                    put("teacherId", transaction.teacherId ?: JSONObject.NULL)
                     put("createdAt", transaction.createdAt)
                     put("updatedAt", transaction.updatedAt)
                     put("isDeleted", transaction.isDeleted)
@@ -400,6 +450,28 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
                 }
             }
 
+            // 5. Hydrate Teachers
+            if (rootObj.has("teachers") && !rootObj.isNull("teachers")) {
+                val teachersList = mutableListOf<Teacher>()
+                val teachersVal = rootObj.get("teachers")
+                if (teachersVal is JSONObject) {
+                    val keys = teachersVal.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        val tchObj = teachersVal.optJSONObject(key) ?: continue
+                        parseTeacherJson(tchObj)?.let { teachersList.add(it) }
+                    }
+                } else if (teachersVal is org.json.JSONArray) {
+                    for (i in 0 until teachersVal.length()) {
+                        val tchObj = teachersVal.optJSONObject(i) ?: continue
+                        parseTeacherJson(tchObj)?.let { teachersList.add(it) }
+                    }
+                }
+                if (teachersList.isNotEmpty()) {
+                    appDao.insertTeachers(teachersList)
+                }
+            }
+
             Log.d(TAG, "Initial hydration from Firebase complete.")
         } catch (e: Exception) {
             Log.e(TAG, "Error in initial hydration: ${e.message}")
@@ -411,9 +483,12 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
             val localStudents = appDao.getAllStudents()
             localStudents.forEach { pushStudent(it) }
 
+            val localTeachers = appDao.getAllTeachers()
+            localTeachers.forEach { pushTeacher(it) }
+
             val localTx = appDao.getAllTransactions()
             localTx.forEach { pushTransaction(it) }
-            Log.d(TAG, "Seeded ${localStudents.size} students and ${localTx.size} transactions from local Room to Firebase.")
+            Log.d(TAG, "Seeded ${localStudents.size} students, ${localTeachers.size} teachers and ${localTx.size} transactions from local Room to Firebase.")
         } catch (e: Exception) {
             Log.e(TAG, "Error seeding local to cloud: ${e.message}")
         }
@@ -546,6 +621,15 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
                         fetchAndHydrateInitialData()
                     }
                 }
+                "teachers" -> {
+                    if (data == null || data == JSONObject.NULL) {
+                        documentId?.toIntOrNull()?.let { appDao.softDeleteTeacher(it) }
+                    } else if (data is JSONObject) {
+                        parseTeacherJson(data)?.let { appDao.insertTeacher(it) }
+                    } else {
+                        fetchAndHydrateInitialData()
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error handling stream event: ${e.message}")
@@ -553,6 +637,33 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
     }
 
     // ==================== JSON PARSERS ====================
+
+    private fun parseTeacherJson(obj: JSONObject): Teacher? {
+        return try {
+            val id = obj.optInt("id", 0)
+            if (id == 0) return null
+            Teacher(
+                id = id,
+                name = obj.optString("name", ""),
+                designation = obj.optString("designation", ""),
+                contactNumber = obj.optString("contactNumber", ""),
+                cnic = obj.optString("cnic", ""),
+                qualification = obj.optString("qualification", ""),
+                monthlySalary = obj.optDouble("monthlySalary", 0.0),
+                joiningDate = obj.optLong("joiningDate", System.currentTimeMillis()),
+                status = obj.optString("status", "Active"),
+                photoUri = obj.optString("photoUri", ""),
+                address = obj.optString("address", ""),
+                createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
+                updatedAt = obj.optLong("updatedAt", System.currentTimeMillis()),
+                createdBy = obj.optString("createdBy", "Staff"),
+                isDeleted = obj.optBoolean("isDeleted", false),
+                syncStatus = DomainConstants.SYNC_STATUS_SYNCED
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     private fun parseStudentJson(obj: JSONObject): Student? {
         return try {
@@ -608,6 +719,9 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
                 description = obj.optString("description", ""),
                 monthOfFee = if (obj.has("monthOfFee") && !obj.isNull("monthOfFee")) obj.optString("monthOfFee") else null,
                 voucherNo = obj.optString("voucherNo", ""),
+                payeeName = obj.optString("payeeName", ""),
+                invoiceNo = obj.optString("invoiceNo", ""),
+                teacherId = if (obj.has("teacherId") && !obj.isNull("teacherId")) obj.optInt("teacherId") else null,
                 createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
                 updatedAt = obj.optLong("updatedAt", System.currentTimeMillis()),
                 isDeleted = obj.optBoolean("isDeleted", false),

@@ -55,6 +55,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val usersList: StateFlow<List<AppUser>> = repository.allUsersFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // Real-time Teachers List
+    val teachersList: StateFlow<List<Teacher>> = repository.allTeachersFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     /**
      * Dedicated Super Admin Login:
      * Only 'bls.esakhel@gmail.com' is allowed.
@@ -995,26 +999,32 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         category: String,
         amount: Double,
         mode: String,
-        desc: String
+        desc: String,
+        payeeName: String = "",
+        invoiceNo: String = "",
+        onSuccess: (Transaction) -> Unit = {}
     ) {
         viewModelScope.launch {
-            repository.insertTransaction(
-                Transaction(
-                    isIncome = false,
-                    amount = amount,
-                    category = category,
-                    paymentMode = mode,
-                    recordedBy = _currentUserRole.value,
-                    description = desc
-                )
+            val tx = Transaction(
+                isIncome = false,
+                amount = amount,
+                category = category,
+                paymentMode = mode,
+                recordedBy = _currentLoggedInName.value.ifBlank { _currentUserRole.value },
+                description = desc,
+                payeeName = payeeName,
+                invoiceNo = invoiceNo
             )
+            val newId = repository.insertTransaction(tx)
+            val savedTx = tx.copy(id = newId.toInt())
             refreshDailyClosing()
+            onSuccess(savedTx)
         }
     }
 
     fun deleteTransaction(transaction: Transaction) {
         viewModelScope.launch {
-            if (_currentUserRole.value == DomainConstants.ROLE_ADMIN) {
+            if (_currentUserRole.value == DomainConstants.ROLE_ADMIN || _currentUserRole.value == DomainConstants.ROLE_SUPER_ADMIN) {
                 repository.deleteTransaction(transaction)
                 refreshDailyClosing()
             }
@@ -1023,7 +1033,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun restoreTransaction(transaction: Transaction) {
         viewModelScope.launch {
-            if (_currentUserRole.value == DomainConstants.ROLE_ADMIN) {
+            if (_currentUserRole.value == DomainConstants.ROLE_ADMIN || _currentUserRole.value == DomainConstants.ROLE_SUPER_ADMIN) {
                 repository.insertTransaction(transaction)
                 refreshDailyClosing()
             }
@@ -1036,6 +1046,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         month: String,
         mode: String,
         remarks: String = "",
+        teacherId: Int? = null,
         onSuccess: (Transaction) -> Unit = {}
     ) {
         viewModelScope.launch {
@@ -1045,14 +1056,71 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 amount = amount,
                 category = DomainConstants.CAT_STAFF_SALARY,
                 paymentMode = mode,
-                recordedBy = _currentUserRole.value,
+                recordedBy = _currentLoggedInName.value.ifBlank { _currentUserRole.value },
                 description = desc,
-                monthOfFee = month
+                monthOfFee = month,
+                payeeName = staffName,
+                teacherId = teacherId
             )
             val newId = repository.insertTransaction(tx)
             val savedTx = tx.copy(id = newId.toInt())
             refreshDailyClosing()
             onSuccess(savedTx)
+        }
+    }
+
+    // =================================================================
+    // TEACHERS & STAFF MANAGEMENT OPERATIONS
+    // =================================================================
+
+    fun addTeacher(
+        name: String,
+        designation: String,
+        contact: String,
+        cnic: String = "",
+        qualification: String = "",
+        monthlySalary: Double,
+        joiningDate: Long = System.currentTimeMillis(),
+        address: String = "",
+        photoUri: String = "",
+        onSuccess: (Teacher) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val tch = Teacher(
+                name = name.trim(),
+                designation = designation.trim(),
+                contactNumber = contact.trim(),
+                cnic = cnic.trim(),
+                qualification = qualification.trim(),
+                monthlySalary = monthlySalary,
+                joiningDate = joiningDate,
+                address = address.trim(),
+                photoUri = photoUri,
+                createdBy = _currentLoggedInName.value.ifBlank { _currentUserRole.value }
+            )
+            val rowId = repository.insertTeacher(tch)
+            val saved = if (tch.id == 0) tch.copy(id = rowId.toInt()) else tch
+            onSuccess(saved)
+        }
+    }
+
+    fun updateTeacher(teacher: Teacher, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.updateTeacher(teacher)
+            onSuccess()
+        }
+    }
+
+    fun deleteTeacher(teacher: Teacher, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.deleteTeacher(teacher)
+            onSuccess()
+        }
+    }
+
+    fun updateTeacherStatus(teacherId: Int, newStatus: String) {
+        viewModelScope.launch {
+            repository.updateTeacherStatus(teacherId, newStatus)
         }
     }
 

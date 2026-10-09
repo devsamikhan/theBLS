@@ -4086,7 +4086,7 @@ _Accounts Department, Beacon Light School_
 
             // Meta Info Box
             paint.color = Color.rgb(245, 247, 250)
-            canvas.drawRoundRect(20f, currY, 480f, currY + 65f, 8f, 8f, paint)
+            canvas.drawRoundRect(20f, currY, 480f, currY + 75f, 8f, 8f, paint)
 
             val vNo = transaction.voucherNo.ifBlank { "PV-${transaction.id}" }
             val dateStr = SimpleDateFormat("dd-MM-yyyy hh:mm a", Locale.getDefault()).format(Date(transaction.date))
@@ -4094,13 +4094,22 @@ _Accounts Department, Beacon Light School_
             paint.color = Color.rgb(40, 40, 40)
             paint.textSize = 9.5f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            canvas.drawText("Voucher #: $vNo", 32f, currY + 22f, paint)
-            canvas.drawText("Payment Mode: ${transaction.paymentMode}", 32f, currY + 42f, paint)
+            canvas.drawText("Voucher #: $vNo", 32f, currY + 20f, paint)
+            val payeeDisplay = if (transaction.payeeName.isNotBlank()) "Paid To: ${transaction.payeeName}" else "Mode: ${transaction.paymentMode}"
+            canvas.drawText(payeeDisplay, 32f, currY + 38f, paint)
+            if (transaction.invoiceNo.isNotBlank()) {
+                canvas.drawText("Bill / Inv #: ${transaction.invoiceNo}", 32f, currY + 56f, paint)
+            } else if (transaction.payeeName.isNotBlank()) {
+                canvas.drawText("Mode: ${transaction.paymentMode}", 32f, currY + 56f, paint)
+            }
 
-            canvas.drawText("Date: $dateStr", 260f, currY + 22f, paint)
-            canvas.drawText("Prepared By: ${transaction.recordedBy.ifBlank { "Accounts Office" }}", 260f, currY + 42f, paint)
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            canvas.drawText("Date: $dateStr", 260f, currY + 20f, paint)
+            canvas.drawText("Mode: ${transaction.paymentMode}", 260f, currY + 38f, paint)
+            val prepBy = if (activeOperatorName.isNotBlank()) getReceivedByLabel() else transaction.recordedBy.ifBlank { "Accounts Office" }
+            canvas.drawText("Recorded By: $prepBy", 260f, currY + 56f, paint)
 
-            currY += 85f
+            currY += 95f
 
             // Voucher Details Box
             paint.color = Color.rgb(235, 240, 248)
@@ -4175,11 +4184,12 @@ _Accounts Department, Beacon Light School_
             paint.color = Color.rgb(70, 70, 70)
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             paint.textAlign = Paint.Align.CENTER
-            val voucherPreparedBy = if (activeOperatorName.isNotBlank()) "Prepared: ${getReceivedByLabel()}" else "Prepared By"
+            val voucherPreparedBy = if (activeOperatorName.isNotBlank()) "Issued: ${getReceivedByLabel()}" else "Prepared By"
             canvas.drawText(voucherPreparedBy, 77f, sigY + 12f, paint)
             canvas.drawText("Checked By", 197f, sigY + 12f, paint)
             canvas.drawText("Approved (Principal)", 317f, sigY + 12f, paint)
-            canvas.drawText("Receiver's Sign", 432f, sigY + 12f, paint)
+            val receiverSign = if (transaction.payeeName.isNotBlank()) "Received: ${transaction.payeeName}" else "Receiver's Sign"
+            canvas.drawText(receiverSign, 432f, sigY + 12f, paint)
             paint.textAlign = Paint.Align.LEFT
 
             pdfDocument.finishPage(page)
@@ -4324,10 +4334,11 @@ _Accounts Department, Beacon Light School_
             paint.color = Color.rgb(70, 70, 70)
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             paint.textAlign = Paint.Align.CENTER
-            val salarySlipOfficer = if (activeOperatorName.isNotBlank()) "Disbursed: ${getReceivedByLabel()}" else "Accounts Officer"
+            val salarySlipOfficer = if (activeOperatorName.isNotBlank()) "Issued: ${getReceivedByLabel()}" else "Accounts Officer"
             canvas.drawText(salarySlipOfficer, 85f, sigY + 12f, paint)
             canvas.drawText("Principal Signature", 235f, sigY + 12f, paint)
-            canvas.drawText("Employee Signature", 385f, sigY + 12f, paint)
+            val teacherReceiver = if (effectiveStaff.isNotBlank()) "Received: $effectiveStaff" else "Employee Signature"
+            canvas.drawText(teacherReceiver, 385f, sigY + 12f, paint)
             paint.textAlign = Paint.Align.LEFT
 
             pdfDocument.finishPage(page)

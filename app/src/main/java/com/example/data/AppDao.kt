@@ -165,5 +165,48 @@ interface AppDao {
 
     @Query("DELETE FROM app_users")
     suspend fun clearAllUsers()
+
+    // Teachers Management Queries
+    @Query("SELECT * FROM teachers WHERE isDeleted = 0 ORDER BY id DESC")
+    fun getAllTeachersFlow(): Flow<List<Teacher>>
+
+    @Query("SELECT * FROM teachers WHERE isDeleted = 0 ORDER BY id DESC")
+    suspend fun getAllTeachers(): List<Teacher>
+
+    @Query("SELECT * FROM teachers WHERE id = :id AND isDeleted = 0")
+    suspend fun getTeacherById(id: Int): Teacher?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTeacher(teacher: Teacher): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTeachers(teachers: List<Teacher>)
+
+    @Update
+    suspend fun updateTeacher(teacher: Teacher)
+
+    @Delete
+    suspend fun deleteTeacher(teacher: Teacher)
+
+    @Query("UPDATE teachers SET isDeleted = 1, updatedAt = :timestamp WHERE id = :id")
+    suspend fun softDeleteTeacher(id: Int, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE teachers SET status = :newStatus, updatedAt = :timestamp WHERE id = :id")
+    suspend fun updateTeacherStatus(id: Int, newStatus: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("SELECT * FROM teachers WHERE syncStatus = 'PENDING'")
+    suspend fun getPendingSyncTeachers(): List<Teacher>
+
+    @Query("UPDATE teachers SET syncStatus = 'SYNCED' WHERE id = :id")
+    suspend fun markTeacherSynced(id: Int)
+
+    @Query("DELETE FROM teachers")
+    suspend fun clearAllTeachers()
+
+    @Query("SELECT * FROM transactions WHERE teacherId = :teacherId AND isDeleted = 0 ORDER BY date DESC")
+    fun getTransactionsByTeacherFlow(teacherId: Int): Flow<List<Transaction>>
+
+    @Query("SELECT * FROM transactions WHERE teacherId = :teacherId AND isDeleted = 0 ORDER BY date DESC")
+    suspend fun getTransactionsByTeacher(teacherId: Int): List<Transaction>
 }
 

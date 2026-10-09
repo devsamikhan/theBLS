@@ -41,6 +41,7 @@ import com.example.ui.components.ExecutiveRecoveryTargetCard
 import com.example.ui.components.PaymentSparkline
 import com.example.ui.components.ShimmerStudentRow
 import com.example.ui.components.EmptyStateView
+import com.example.ui.teachers.TeachersManagementView
 import com.example.ui.theme.*
 import com.example.util.*
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -79,6 +80,8 @@ fun StudentsTab(viewModel: AppViewModel) {
 
     var studentSortField by rememberSaveable { mutableStateOf(StudentSortField.NAME) }
     var studentSortAscending by rememberSaveable { mutableStateOf(true) }
+
+    var selectedSection by rememberSaveable { mutableStateOf(0) } // 0 = Students Directory, 1 = Teachers & Staff
 
     var filterCategory by rememberSaveable { mutableStateOf(StudentFilterCategory.ALL) }
     var classFilter by rememberSaveable { mutableStateOf("All Classes") }
@@ -485,9 +488,98 @@ Warm regards,
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val isWideScreen = maxWidth >= 840.dp
 
-        if (isWideScreen) {
-            // Adaptive Dual-Pane Layout for Tablets / Large Screens
-            Row(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Segmented Switcher Pill: Students Directory vs Teachers & Staff
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Option 0: Students Directory
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { selectedSection = 0 },
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (selectedSection == 0) MaterialTheme.colorScheme.surface else Color.Transparent,
+                        shadowElevation = if (selectedSection == 0) 1.dp else 0.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Default.School,
+                                contentDescription = null,
+                                tint = if (selectedSection == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "Students Directory",
+                                fontSize = 12.5.sp,
+                                fontWeight = if (selectedSection == 0) FontWeight.Bold else FontWeight.Medium,
+                                color = if (selectedSection == 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    // Option 1: Teachers & Staff
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { selectedSection = 1 },
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (selectedSection == 1) MaterialTheme.colorScheme.surface else Color.Transparent,
+                        shadowElevation = if (selectedSection == 1) 1.dp else 0.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Badge,
+                                contentDescription = null,
+                                tint = if (selectedSection == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "Teachers & Staff",
+                                fontSize = 12.5.sp,
+                                fontWeight = if (selectedSection == 1) FontWeight.Bold else FontWeight.Medium,
+                                color = if (selectedSection == 1) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (selectedSection == 1) {
+                TeachersManagementView(
+                    viewModel = viewModel,
+                    isWideScreen = isWideScreen,
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                Box(modifier = Modifier.weight(1f)) {
+                    if (isWideScreen) {
+                        // Adaptive Dual-Pane Layout for Tablets / Large Screens
+                        Row(modifier = Modifier.fillMaxSize()) {
                 // Left Pane: Student List & Search (420dp width)
                 Column(
                     modifier = Modifier
@@ -708,8 +800,11 @@ Warm regards,
                     }
                 }
             }
+                }
+            }
         }
     }
+}
 }
 
 @Composable

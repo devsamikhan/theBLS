@@ -889,8 +889,8 @@ Warm regards,
     if (showSpeedDialExpense) {
         AddExpenseDialog(
             onDismiss = { showSpeedDialExpense = false },
-            onSubmit = { amount, category, mode, details ->
-                viewModel.addExpense(category, amount, mode, details)
+            onSubmit = { amount, category, mode, details, payee, invNo ->
+                viewModel.addExpense(category, amount, mode, details, payeeName = payee, invoiceNo = invNo)
                 AudioFeedback.playSuccessChime()
                 android.widget.Toast.makeText(context, "Expense Rs. ${amount.toInt()} logged!", android.widget.Toast.LENGTH_SHORT).show()
                 showSpeedDialExpense = false
