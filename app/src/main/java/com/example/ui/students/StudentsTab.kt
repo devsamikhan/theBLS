@@ -86,6 +86,7 @@ fun StudentsTab(viewModel: AppViewModel) {
     var filterCategory by rememberSaveable { mutableStateOf(StudentFilterCategory.ALL) }
     var classFilter by rememberSaveable { mutableStateOf("All Classes") }
     var selectedAlphabet by rememberSaveable { mutableStateOf("") }
+    var showFilterSheet by rememberSaveable { mutableStateOf(false) }
 
     val activeCount = remember(allStudentsRaw) {
         allStudentsRaw.count { it.status.equals("Active", ignoreCase = true) }
@@ -485,6 +486,35 @@ Warm regards,
         )
     }
 
+    if (showFilterSheet) {
+        StudentsFilterBottomSheet(
+            onDismiss = { showFilterSheet = false },
+            statusFilter = statusFilter,
+            onStatusFilterChange = { viewModel.setStatusFilter(it) },
+            filterCategory = filterCategory,
+            onFilterCategoryChange = { filterCategory = it },
+            classFilter = classFilter,
+            onClassFilterChange = { classFilter = it },
+            selectedAlphabet = selectedAlphabet,
+            onSelectAlphabet = { selectedAlphabet = it },
+            availableClasses = availableClasses,
+            studentSortField = studentSortField,
+            studentSortAscending = studentSortAscending,
+            onSortChange = { field, asc ->
+                studentSortField = field
+                studentSortAscending = asc
+            },
+            onResetFilters = {
+                viewModel.setStatusFilter("Active")
+                filterCategory = StudentFilterCategory.ALL
+                classFilter = "All Classes"
+                selectedAlphabet = ""
+                studentSortField = StudentSortField.NAME
+                studentSortAscending = true
+            }
+        )
+    }
+
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val isWideScreen = maxWidth >= 840.dp
 
@@ -608,16 +638,10 @@ Warm regards,
                         onBulkFee = { showBulkFeeDialog = true },
                         onClassChallans = { showClassBulkChallanDialog = true },
                         onPromoteClass = { showPromoteClassDialog = true },
-                        onBulkWhatsAppReminders = { showBulkWhatsAppDialog = true }
-                    )
-
-                    StudentsSortingHeader(
-                        studentSortField = studentSortField,
-                        studentSortAscending = studentSortAscending,
-                        onSortChange = { field, ascending ->
-                            studentSortField = field
-                            studentSortAscending = ascending
-                        }
+                        onBulkWhatsAppReminders = { showBulkWhatsAppDialog = true },
+                        onOpenFilterSheet = { showFilterSheet = true },
+                        totalExpectedFee = totalExpectedFee,
+                        totalCollectedFee = totalCollectedFee
                     )
 
                     if (students.isEmpty()) {
@@ -630,13 +654,6 @@ Warm regards,
                             contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 96.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            item {
-                                ExecutiveRecoveryTargetCard(
-                                    expectedTotal = totalExpectedFee,
-                                    collectedTotal = totalCollectedFee,
-                                    lowestClassRecovery = lowestClassRecovery
-                                )
-                            }
                             items(sortedStudents, key = { it.id }) { s ->
                                 val isSelected = selectedStudent?.id == s.id
                                 StudentRowCard(
@@ -744,33 +761,20 @@ Warm regards,
                         onBulkFee = { showBulkFeeDialog = true },
                         onClassChallans = { showClassBulkChallanDialog = true },
                         onPromoteClass = { showPromoteClassDialog = true },
-                        onBulkWhatsAppReminders = { showBulkWhatsAppDialog = true }
+                        onBulkWhatsAppReminders = { showBulkWhatsAppDialog = true },
+                        onOpenFilterSheet = { showFilterSheet = true },
+                        totalExpectedFee = totalExpectedFee,
+                        totalCollectedFee = totalCollectedFee
                     )
 
                     if (students.isEmpty()) {
                         EmptyStudentsPlaceholder(modifier = Modifier.weight(1f))
                     } else {
-                        StudentsSortingHeader(
-                            studentSortField = studentSortField,
-                            studentSortAscending = studentSortAscending,
-                            onSortChange = { field, ascending ->
-                                studentSortField = field
-                                studentSortAscending = ascending
-                            }
-                        )
-
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 96.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            item {
-                                ExecutiveRecoveryTargetCard(
-                                    expectedTotal = totalExpectedFee,
-                                    collectedTotal = totalCollectedFee,
-                                    lowestClassRecovery = lowestClassRecovery
-                                )
-                            }
                             items(sortedStudents, key = { it.id }) { s ->
                                 StudentRowCard(
                                     student = s,
@@ -829,444 +833,506 @@ private fun StudentsListControlHeader(
     onBulkFee: () -> Unit,
     onClassChallans: () -> Unit,
     onPromoteClass: () -> Unit = {},
-    onBulkWhatsAppReminders: () -> Unit = {}
+    onBulkWhatsAppReminders: () -> Unit = {},
+    onOpenFilterSheet: () -> Unit = {},
+    totalExpectedFee: Long = 0L,
+    totalCollectedFee: Long = 0L
 ) {
-    Card(
+    var showMoreMenu by remember { mutableStateOf(false) }
+    val isAnyFilterActive = filterCategory != StudentFilterCategory.ALL || classFilter != "All Classes" || statusFilter != "Active" || selectedAlphabet.isNotEmpty()
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        // Row 1: Unified Search & Action Bar
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Header Row: Title & Active/Left Badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Students Directory", 
-                    style = MaterialTheme.typography.titleMedium, 
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                ) {
-                    Text(
-                        "$activeCount Active • $leftCount Alumni",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
-                }
-            }
-
-            // Quick Actions Row (Fits 100% on screen without scrolling or cut-off)
-            var showMoreMenu by remember { mutableStateOf(false) }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // New Admission Button (Primary Tint)
-                Surface(
-                    modifier = Modifier
-                        .weight(1.22f)
-                        .height(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable { onAddStudent() }
-                        .testTag("add_student_button"),
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(15.dp), tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("Admission", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary, maxLines = 1)
-                    }
-                }
-
-                // Bulk Fee Reception
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable { onBulkFee() }
-                        .testTag("bulk_fee_button"),
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.financialColors.cash.copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, MaterialTheme.financialColors.cash.copy(alpha = 0.3f))
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(15.dp), tint = MaterialTheme.financialColors.cash)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Bulk Fee", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.cash, maxLines = 1)
-                    }
-                }
-
-                // Class Challans
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable { onClassChallans() },
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(15.dp), tint = MaterialTheme.colorScheme.onSurface)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Challans", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                    }
-                }
-
-                // More Actions Menu Button (Promote, WhatsApp Broadcast)
-                Box {
-                    Surface(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { showMoreMenu = true },
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More actions", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = showMoreMenu,
-                        onDismissRequest = { showMoreMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Promote Class", fontSize = 13.sp) },
-                            leadingIcon = { Icon(Icons.Default.School, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) },
-                            onClick = {
-                                showMoreMenu = false
-                                onPromoteClass()
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("WhatsApp Broadcast", fontSize = 13.sp) },
-                            leadingIcon = { Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.financialColors.cash) },
-                            onClick = {
-                                showMoreMenu = false
-                                onBulkWhatsAppReminders()
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Compact Search Bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchChange,
-                placeholder = { Text("Search by name, reg no, father, or class...", fontSize = 12.5.sp) },
+                placeholder = { Text("Search student, father, reg#, class...", fontSize = 12.5.sp) },
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .weight(1f)
                     .testTag("student_search_input"),
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = "Search",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
                 trailingIcon = if (searchQuery.isNotEmpty()) {
                     {
                         IconButton(onClick = { onSearchChange("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear", modifier = Modifier.size(15.dp))
+                            Icon(Icons.Default.Clear, contentDescription = "Clear", modifier = Modifier.size(16.dp))
                         }
                     }
                 } else null,
                 singleLine = true,
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
-            // Combined Filter & Class Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // Filter Icon Button with Active Dot
+            Surface(
+                onClick = onOpenFilterSheet,
+                shape = RoundedCornerShape(12.dp),
+                color = if (isAnyFilterActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, if (isAnyFilterActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                modifier = Modifier.size(46.dp)
             ) {
-                // Class Dropdown Chip
-                var classMenuOpen by remember { mutableStateOf(false) }
-                Box {
-                    AssistChip(
-                        onClick = { classMenuOpen = true },
-                        label = { Text(if (classFilter == "All Classes") "Class: All" else classFilter, fontSize = 11.sp, fontWeight = if (classFilter != "All Classes") FontWeight.Bold else FontWeight.Medium) },
-                        trailingIcon = {
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(15.dp))
-                        },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = if (classFilter != "All Classes") MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.height(30.dp)
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.Tune,
+                        contentDescription = "Filter & Sort",
+                        tint = if (isAnyFilterActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
                     )
-                    DropdownMenu(
-                        expanded = classMenuOpen,
-                        onDismissRequest = { classMenuOpen = false }
-                    ) {
-                        availableClasses.forEach { cls ->
-                            DropdownMenuItem(
-                                text = { 
-                                    Text(
-                                        cls, 
-                                        fontWeight = if (cls == classFilter) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (cls == classFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                        fontSize = 13.sp
-                                    ) 
-                                },
-                                onClick = {
-                                    onClassFilterChange(cls)
-                                    classMenuOpen = false
-                                }
-                            )
-                        }
+                    if (isAnyFilterActive) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(top = 8.dp, end = 8.dp)
+                                .size(6.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        )
+                    }
+                }
+            }
+
+            // Quick Actions 3-dots Menu Button
+            Box {
+                Surface(
+                    onClick = { showMoreMenu = true },
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.size(46.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = "Actions",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
 
-                // Status: Active
+                DropdownMenu(
+                    expanded = showMoreMenu,
+                    onDismissRequest = { showMoreMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("New Admission", fontSize = 13.sp) },
+                        leadingIcon = { Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) },
+                        onClick = {
+                            showMoreMenu = false
+                            onAddStudent()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Bulk Fee Collection", fontSize = 13.sp) },
+                        leadingIcon = { Icon(Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.financialColors.cash) },
+                        onClick = {
+                            showMoreMenu = false
+                            onBulkFee()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Print Class Challans", fontSize = 13.sp) },
+                        leadingIcon = { Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface) },
+                        onClick = {
+                            showMoreMenu = false
+                            onClassChallans()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Promote Class", fontSize = 13.sp) },
+                        leadingIcon = { Icon(Icons.Default.School, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) },
+                        onClick = {
+                            showMoreMenu = false
+                            onPromoteClass()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("WhatsApp Broadcast", fontSize = 13.sp) },
+                        leadingIcon = { Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.financialColors.cash) },
+                        onClick = {
+                            showMoreMenu = false
+                            onBulkWhatsAppReminders()
+                        }
+                    )
+                }
+            }
+        }
+
+        // Row 2: Sleek Single-Line Filter Pills
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // All Active
+            FilterChip(
+                selected = statusFilter == "Active" && filterCategory == StudentFilterCategory.ALL && classFilter == "All Classes",
+                onClick = {
+                    onStatusFilterChange("Active")
+                    onFilterCategoryChange(StudentFilterCategory.ALL)
+                    onClassFilterChange("All Classes")
+                    onSelectAlphabet("")
+                },
+                label = { Text("All ($activeCount)", fontSize = 11.5.sp) },
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.height(30.dp)
+            )
+
+            // Overdue Defaulters
+            FilterChip(
+                selected = filterCategory == StudentFilterCategory.DEFAULTERS_ONLY,
+                onClick = {
+                    onStatusFilterChange("Active")
+                    onFilterCategoryChange(if (filterCategory == StudentFilterCategory.DEFAULTERS_ONLY) StudentFilterCategory.ALL else StudentFilterCategory.DEFAULTERS_ONLY)
+                },
+                label = { Text("Overdue ($defaultersCount)", fontSize = 11.5.sp) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.financialColors.expenseContainer,
+                    selectedLabelColor = MaterialTheme.financialColors.expense
+                ),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.height(30.dp)
+            )
+
+            // Paid This Month
+            FilterChip(
+                selected = filterCategory == StudentFilterCategory.PAID_THIS_MONTH,
+                onClick = {
+                    onStatusFilterChange("Active")
+                    onFilterCategoryChange(if (filterCategory == StudentFilterCategory.PAID_THIS_MONTH) StudentFilterCategory.ALL else StudentFilterCategory.PAID_THIS_MONTH)
+                },
+                label = { Text("Paid ($paidCount)", fontSize = 11.5.sp) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.financialColors.cashContainer,
+                    selectedLabelColor = MaterialTheme.financialColors.cash
+                ),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.height(30.dp)
+            )
+
+            // Class Dropdown Chip
+            var classMenuOpen by remember { mutableStateOf(false) }
+            Box {
                 FilterChip(
-                    selected = statusFilter == "Active" && filterCategory == StudentFilterCategory.ALL,
-                    onClick = {
-                        onStatusFilterChange("Active")
-                        onFilterCategoryChange(StudentFilterCategory.ALL)
-                    },
-                    label = { Text("Active ($activeCount)", fontSize = 11.sp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.financialColors.cash.copy(alpha = 0.12f),
-                        selectedLabelColor = MaterialTheme.financialColors.cash
-                    ),
+                    selected = classFilter != "All Classes",
+                    onClick = { classMenuOpen = true },
+                    label = { Text(if (classFilter == "All Classes") "Class ▾" else "$classFilter ▾", fontSize = 11.5.sp) },
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.height(30.dp)
                 )
+                DropdownMenu(
+                    expanded = classMenuOpen,
+                    onDismissRequest = { classMenuOpen = false }
+                ) {
+                    availableClasses.forEach { cls ->
+                        DropdownMenuItem(
+                            text = { Text(cls, fontSize = 12.5.sp, fontWeight = if (cls == classFilter) FontWeight.Bold else FontWeight.Normal) },
+                            onClick = {
+                                onClassFilterChange(cls)
+                                classMenuOpen = false
+                            }
+                        )
+                    }
+                }
+            }
 
-                // Overdue Defaulters
-                FilterChip(
-                    selected = filterCategory == StudentFilterCategory.DEFAULTERS_ONLY,
-                    onClick = {
-                        onStatusFilterChange("Active")
-                        onFilterCategoryChange(StudentFilterCategory.DEFAULTERS_ONLY)
-                    },
-                    label = { Text("Overdue ($defaultersCount)", fontSize = 11.sp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.financialColors.expense.copy(alpha = 0.12f),
-                        selectedLabelColor = MaterialTheme.financialColors.expense
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.height(30.dp)
-                )
-
-                // Paid This Month
-                FilterChip(
-                    selected = filterCategory == StudentFilterCategory.PAID_THIS_MONTH,
-                    onClick = {
-                        onStatusFilterChange("Active")
-                        onFilterCategoryChange(StudentFilterCategory.PAID_THIS_MONTH)
-                    },
-                    label = { Text("Paid ($paidCount)", fontSize = 11.sp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.financialColors.cash.copy(alpha = 0.12f),
-                        selectedLabelColor = MaterialTheme.financialColors.cash
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.height(30.dp)
-                )
-
-                // Alumni / Left
+            if (leftCount > 0) {
                 FilterChip(
                     selected = statusFilter == "Left",
-                    onClick = { onStatusFilterChange("Left") },
-                    label = { Text("Alumni ($leftCount)", fontSize = 11.sp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f),
-                        selectedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.height(30.dp)
-                )
-
-                // All
-                FilterChip(
-                    selected = statusFilter == "All" && filterCategory == StudentFilterCategory.ALL,
                     onClick = {
-                        onStatusFilterChange("All")
-                        onFilterCategoryChange(StudentFilterCategory.ALL)
+                        onStatusFilterChange(if (statusFilter == "Left") "Active" else "Left")
                     },
-                    label = { Text("All ($totalCount)", fontSize = 11.sp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        selectedLabelColor = MaterialTheme.colorScheme.primary
-                    ),
+                    label = { Text("Alumni ($leftCount)", fontSize = 11.5.sp) },
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.height(30.dp)
                 )
             }
+        }
 
-            // Quick A-Z Alphabet Filter Strip
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
+        // Row 3: Minimalist Recovery KPI Strip
+        if (totalExpectedFee > 0L) {
+            val rate = (totalCollectedFee.toFloat() / totalExpectedFee.toFloat()).coerceIn(0f, 1f)
+            val pct = (rate * 100).toInt()
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                val alphabets = listOf("All") + ('A'..'Z').map { it.toString() }
-                alphabets.forEach { letter ->
-                    val isSelected = (letter == "All" && selectedAlphabet.isEmpty()) || letter.equals(selectedAlphabet, ignoreCase = true)
-                    Surface(
-                        onClick = {
-                            onSelectAlphabet(if (letter == "All") "" else letter)
-                        },
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                        border = BorderStroke(0.5.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-                        modifier = Modifier.defaultMinSize(minWidth = 28.dp, minHeight = 24.dp)
+                Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = letter,
-                                fontSize = 10.5.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = "Fee Recovery: Rs. ${totalCollectedFee.toInt()} / ${totalExpectedFee.toInt()}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "$pct%",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (pct >= 75) MaterialTheme.financialColors.cash else MaterialTheme.financialColors.expense
+                        )
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LinearProgressIndicator(
+                        progress = { rate },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(2.dp)),
+                        color = if (pct >= 75) MaterialTheme.financialColors.cash else MaterialTheme.financialColors.expense,
+                        trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    )
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StudentsSortingHeader(
+fun StudentsFilterBottomSheet(
+    onDismiss: () -> Unit,
+    statusFilter: String,
+    onStatusFilterChange: (String) -> Unit,
+    filterCategory: StudentFilterCategory,
+    onFilterCategoryChange: (StudentFilterCategory) -> Unit,
+    classFilter: String,
+    onClassFilterChange: (String) -> Unit,
+    selectedAlphabet: String,
+    onSelectAlphabet: (String) -> Unit,
+    availableClasses: List<String>,
     studentSortField: StudentSortField,
     studentSortAscending: Boolean,
-    onSortChange: (StudentSortField, Boolean) -> Unit
+    onSortChange: (StudentSortField, Boolean) -> Unit,
+    onResetFilters: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-        // Name Sort
-        Row(
+        Column(
             modifier = Modifier
-                .clickable {
-                    if (studentSortField == StudentSortField.NAME) {
-                        onSortChange(StudentSortField.NAME, !studentSortAscending)
-                    } else {
-                        onSortChange(StudentSortField.NAME, true)
-                    }
-                },
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 28.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Student Name",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (studentSortField == StudentSortField.NAME) FontWeight.Bold else FontWeight.Medium,
-                color = if (studentSortField == StudentSortField.NAME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.width(3.dp))
-            Icon(
-                imageVector = if (studentSortField == StudentSortField.NAME) {
-                    if (studentSortAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward
-                } else Icons.Default.Sort,
-                contentDescription = "Sort by Name",
-                modifier = Modifier.size(12.dp),
-                tint = if (studentSortField == StudentSortField.NAME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
-        }
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        "Filter & Sort Students",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        "Refine student directory view",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                TextButton(onClick = onResetFilters) {
+                    Text("Reset All", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                }
+            }
 
-        // Admission Date Sort
-        Row(
-            modifier = Modifier
-                .clickable {
-                    if (studentSortField == StudentSortField.DATE) {
-                        onSortChange(StudentSortField.DATE, !studentSortAscending)
-                    } else {
-                        onSortChange(StudentSortField.DATE, true)
-                    }
-                },
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Admission",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (studentSortField == StudentSortField.DATE) FontWeight.Bold else FontWeight.Medium,
-                color = if (studentSortField == StudentSortField.DATE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.width(3.dp))
-            Icon(
-                imageVector = if (studentSortField == StudentSortField.DATE) {
-                    if (studentSortAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward
-                } else Icons.Default.Sort,
-                contentDescription = "Sort by Admission Date",
-                modifier = Modifier.size(12.dp),
-                tint = if (studentSortField == StudentSortField.DATE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
-        }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
-        // Fee Amount Sort
-        Row(
-            modifier = Modifier
-                .clickable {
-                    if (studentSortField == StudentSortField.AMOUNT) {
-                        onSortChange(StudentSortField.AMOUNT, !studentSortAscending)
-                    } else {
-                        onSortChange(StudentSortField.AMOUNT, true)
+            // 1. Enrollment Status
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Enrollment Status", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("Active", "Left", "All").forEach { status ->
+                        val isSelected = statusFilter == status
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onStatusFilterChange(status) },
+                            label = { Text(if (status == "Left") "Alumni" else status) },
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
-        ) {
-            Text(
-                text = "Monthly Fee",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (studentSortField == StudentSortField.AMOUNT) FontWeight.Bold else FontWeight.Medium,
-                color = if (studentSortField == StudentSortField.AMOUNT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.width(3.dp))
-            Icon(
-                imageVector = if (studentSortField == StudentSortField.AMOUNT) {
-                    if (studentSortAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward
-                } else Icons.Default.Sort,
-                contentDescription = "Sort by Fee",
-                modifier = Modifier.size(12.dp),
-                tint = if (studentSortField == StudentSortField.AMOUNT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
+                }
+            }
+
+            // 2. Fee Payment Status
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Fee Payment Status", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = filterCategory == StudentFilterCategory.ALL,
+                        onClick = { onFilterCategoryChange(StudentFilterCategory.ALL) },
+                        label = { Text("All") },
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = filterCategory == StudentFilterCategory.DEFAULTERS_ONLY,
+                        onClick = { onFilterCategoryChange(StudentFilterCategory.DEFAULTERS_ONLY) },
+                        label = { Text("Overdue") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.financialColors.expenseContainer,
+                            selectedLabelColor = MaterialTheme.financialColors.expense
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1.2f)
+                    )
+                    FilterChip(
+                        selected = filterCategory == StudentFilterCategory.PAID_THIS_MONTH,
+                        onClick = { onFilterCategoryChange(StudentFilterCategory.PAID_THIS_MONTH) },
+                        label = { Text("Paid") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.financialColors.cashContainer,
+                            selectedLabelColor = MaterialTheme.financialColors.cash
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // 3. Class Filter
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Class Filter", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    availableClasses.forEach { cls ->
+                        FilterChip(
+                            selected = classFilter == cls,
+                            onClick = { onClassFilterChange(cls) },
+                            label = { Text(cls, fontSize = 11.5.sp) },
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                    }
+                }
+            }
+
+            // 4. Sort Order
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Sort Order", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(
+                        StudentSortField.NAME to "Name",
+                        StudentSortField.DATE to "Date",
+                        StudentSortField.AMOUNT to "Fee"
+                    ).forEach { (field, label) ->
+                        val isSelected = studentSortField == field
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                if (isSelected) {
+                                    onSortChange(field, !studentSortAscending)
+                                } else {
+                                    onSortChange(field, true)
+                                }
+                            },
+                            label = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(label)
+                                    if (isSelected) {
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Icon(
+                                            imageVector = if (studentSortAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            // 5. Alphabet Initial Strip (Compact)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Name Starting With (A-Z)", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    val alphabets = listOf("All") + ('A'..'Z').map { it.toString() }
+                    alphabets.forEach { letter ->
+                        val isSelected = (letter == "All" && selectedAlphabet.isEmpty()) || letter.equals(selectedAlphabet, ignoreCase = true)
+                        Surface(
+                            onClick = { onSelectAlphabet(if (letter == "All") "" else letter) },
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = BorderStroke(0.5.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                            modifier = Modifier.defaultMinSize(minWidth = 30.dp, minHeight = 26.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)) {
+                                Text(
+                                    text = letter,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Apply & Close", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -1304,198 +1370,195 @@ fun StudentRowCard(
         }.sumOf { it.amount }
         totalPaid >= discountedMonthly && discountedMonthly > 0
     }
+    val advanceWallet = remember(transactions, student) {
+        DomainConstants.calculateStudentAdvanceWallet(student, transactions)
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
             .testTag("student_row_${student.id}"),
-        colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+        shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Sleek Squircle Avatar
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        if (paidThisMonth) MaterialTheme.financialColors.cashContainer
+                        else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                // Sleek squircle avatar
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (paidThisMonth) MaterialTheme.financialColors.cashContainer else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (student.photoUri.isNotBlank()) {
-                        AsyncImage(
-                            model = student.photoUri,
-                            contentDescription = "Photo of ${student.studentName}",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(14.dp))
-                        )
-                    } else {
-                        Text(
-                            text = student.studentName.take(1).uppercase(),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                            color = if (paidThisMonth) MaterialTheme.financialColors.cash else MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = student.studentName,
-                            fontWeight = FontWeight.SemiBold,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
-                        if (student.regNo.isNotBlank()) {
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                            ) {
-                                Text(
-                                    text = student.regNo,
-                                    fontSize = 8.5.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Class: ${student.className} • Father: ${student.fatherName}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.5.sp,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                if (student.photoUri.isNotBlank()) {
+                    AsyncImage(
+                        model = student.photoUri,
+                        contentDescription = "Photo of ${student.studentName}",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp))
                     )
-                }
-
-                // Status Badge on top right
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    val advanceWallet = remember(transactions, student) {
-                        DomainConstants.calculateStudentAdvanceWallet(student, transactions)
-                    }
-                    if (advanceWallet > 0.0) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-                        ) {
-                            Text(
-                                text = "Adv: Rs. ${advanceWallet.toInt()}",
-                                fontSize = 8.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
-                            )
-                        }
-                    }
-                    if (paidThisMonth) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.financialColors.cashContainer,
-                            border = BorderStroke(1.dp, MaterialTheme.financialColors.cash.copy(alpha = 0.3f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp)
-                            ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.financialColors.cash, modifier = Modifier.size(11.dp))
-                                Text("Paid", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.cash)
-                            }
-                        }
-                    } else {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.financialColors.expenseContainer,
-                            border = BorderStroke(1.dp, MaterialTheme.financialColors.expense.copy(alpha = 0.3f))
-                        ) {
-                            Text(
-                                text = "Rs. ${discountedMonthly.toInt()} Due",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.financialColors.expense,
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
+                } else {
+                    Text(
+                        text = student.studentName.take(1).uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = if (paidThisMonth) MaterialTheme.financialColors.cash else MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 
-            if (onQuickFee != null || onQuickWhatsApp != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), thickness = 0.7.dp)
-                Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
+            // Student Info Column
+            Column(modifier = Modifier.weight(1f)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    val phoneFormatted = InputFormatUtils.formatPhoneDisplay(student.contactNumber)
                     Text(
-                        text = "📞 $phoneFormatted",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp
+                        text = student.studentName,
+                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
+                    if (student.regNo.isNotBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                        ) {
+                            Text(
+                                text = student.regNo,
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
+                    if (advanceWallet > 0.0) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        ) {
+                            Text(
+                                text = "Adv",
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
+                }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        if (onQuickWhatsApp != null && student.contactNumber.isNotBlank()) {
-                            FilledTonalButton(
-                                onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    onQuickWhatsApp()
-                                },
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = MaterialTheme.financialColors.cashContainer.copy(alpha = 0.7f)
-                                ),
-                                modifier = Modifier.height(30.dp)
-                            ) {
-                                Icon(Icons.Default.Send, contentDescription = null, tint = MaterialTheme.financialColors.cash, modifier = Modifier.size(12.dp))
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text("WhatsApp", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.cash)
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Text(
+                    text = "${student.className} • ${student.fatherName}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.5.sp,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Right Actions: Status Badge (Clickable for Fee Collection) + WhatsApp Button
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                if (paidThisMonth) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.financialColors.cashContainer.copy(alpha = 0.8f),
+                        border = BorderStroke(0.5.dp, MaterialTheme.financialColors.cash.copy(alpha = 0.35f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.financialColors.cash,
+                                modifier = Modifier.size(11.dp)
+                            )
+                            Text(
+                                "Paid",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.financialColors.cash
+                            )
+                        }
+                    }
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.financialColors.expenseContainer.copy(alpha = 0.8f),
+                        border = BorderStroke(0.5.dp, MaterialTheme.financialColors.expense.copy(alpha = 0.35f)),
+                        modifier = Modifier.clickable {
+                            if (onQuickFee != null) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onQuickFee()
                             }
                         }
-                        if (onQuickFee != null) {
-                            Button(
-                                onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    onQuickFee()
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.financialColors.cash),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                                modifier = Modifier.height(30.dp)
-                            ) {
-                                Icon(Icons.Default.AddCard, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text("Receive Fee", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Text(
+                                text = "Rs. ${discountedMonthly.toInt()}",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.financialColors.expense
+                            )
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Collect Fee",
+                                tint = MaterialTheme.financialColors.expense,
+                                modifier = Modifier.size(11.dp)
+                            )
                         }
+                    }
+                }
+
+                if (onQuickWhatsApp != null && student.contactNumber.isNotBlank()) {
+                    IconButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onQuickWhatsApp()
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Send,
+                            contentDescription = "WhatsApp reminder",
+                            tint = MaterialTheme.financialColors.cash,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
             }

@@ -362,96 +362,70 @@ fun DashboardContainer(viewModel: AppViewModel) {
                             title = {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Surface(
-                                        shape = RoundedCornerShape(12.dp),
+                                        shape = RoundedCornerShape(10.dp),
                                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                                        modifier = Modifier.size(38.dp)
+                                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                                        modifier = Modifier.size(32.dp)
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
-                                            BLSLogo(customSize = 25.dp)
+                                            BLSLogo(customSize = 20.dp)
                                         }
                                     }
-                                    Column {
-                                        Text(
-                                            "BLS Cash Record",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        // Minimalist Sync Capsule Pill
-                                        Surface(
-                                            onClick = {
-                                                if (role == DomainConstants.ROLE_ADMIN) {
-                                                    showCloudSyncDialog = true
-                                                } else {
-                                                    viewModel.flushOfflineSyncQueue()
-                                                }
-                                            },
-                                            shape = RoundedCornerShape(100.dp),
-                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                                    Text(
+                                        "BLS Cash Record",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 15.sp
+                                    )
+
+                                    // Minimalist Live Sync Indicator Dot
+                                    Surface(
+                                        onClick = {
+                                            if (role == DomainConstants.ROLE_ADMIN) {
+                                                showCloudSyncDialog = true
+                                            } else {
+                                                viewModel.flushOfflineSyncQueue()
+                                            }
+                                        },
+                                        shape = CircleShape,
+                                        color = Color.Transparent
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.padding(4.dp),
+                                            contentAlignment = Alignment.Center
                                         ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                            ) {
-                                                when (syncState) {
-                                                    com.example.data.SyncState.SYNCING -> {
-                                                        CircularProgressIndicator(
-                                                            modifier = Modifier.size(8.dp),
-                                                            strokeWidth = 1.5.dp,
-                                                            color = MaterialTheme.colorScheme.primary
-                                                        )
-                                                        Text(
-                                                            "Syncing...",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.colorScheme.primary,
-                                                            fontSize = 10.sp
-                                                        )
-                                                    }
-                                                    com.example.data.SyncState.OFFLINE -> {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .size(6.dp)
-                                                                .background(MaterialTheme.financialColors.amber, CircleShape)
-                                                        )
-                                                        Text(
-                                                            "Offline (Tap to Sync)",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.financialColors.amber,
-                                                            fontSize = 10.sp
-                                                        )
-                                                    }
-                                                    com.example.data.SyncState.ERROR -> {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .size(6.dp)
-                                                                .background(MaterialTheme.financialColors.expense, CircleShape)
-                                                        )
-                                                        Text(
-                                                            "Sync Alert",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.financialColors.expense,
-                                                            fontSize = 10.sp
-                                                        )
-                                                    }
-                                                    com.example.data.SyncState.SYNCED -> {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .size(6.dp)
-                                                                .background(MaterialTheme.financialColors.cash, CircleShape)
-                                                        )
-                                                        Text(
-                                                            "Live Synced",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            fontSize = 10.sp
-                                                        )
-                                                    }
+                                            when (syncState) {
+                                                com.example.data.SyncState.SYNCING -> {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(8.dp),
+                                                        strokeWidth = 1.5.dp,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                                com.example.data.SyncState.OFFLINE -> {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(7.dp)
+                                                            .background(MaterialTheme.financialColors.amber, CircleShape)
+                                                    )
+                                                }
+                                                com.example.data.SyncState.ERROR -> {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(7.dp)
+                                                            .background(MaterialTheme.financialColors.expense, CircleShape)
+                                                    )
+                                                }
+                                                com.example.data.SyncState.SYNCED -> {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(7.dp)
+                                                            .background(MaterialTheme.financialColors.cash, CircleShape)
+                                                    )
                                                 }
                                             }
                                         }
@@ -495,9 +469,9 @@ fun DashboardContainer(viewModel: AppViewModel) {
                                     Surface(
                                         onClick = { showUserMenu = true },
                                         shape = RoundedCornerShape(100.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-                                        modifier = Modifier.height(32.dp)
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                                        modifier = Modifier.height(30.dp)
                                     ) {
                                         Row(
                                             modifier = Modifier.padding(horizontal = 9.dp),
@@ -612,13 +586,14 @@ fun DashboardContainer(viewModel: AppViewModel) {
                     }
                 },
                 bottomBar = {
-                    val borderLineColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                    val borderLineColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
                     NavigationBar(
                         containerColor = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 2.dp,
+                        tonalElevation = 0.dp,
                         windowInsets = NavigationBarDefaults.windowInsets,
                         modifier = Modifier
                             .fillMaxWidth()
+                            .height(64.dp)
                             .drawBehind {
                                 drawLine(
                                     color = borderLineColor,

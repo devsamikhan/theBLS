@@ -102,6 +102,7 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
     var selectedDateFilter by rememberSaveable { mutableStateOf(LedgerDateFilter.ALL) }
     var selectedHeadFilter by rememberSaveable { mutableStateOf(LedgerHeadFilter.ALL) }
     var ledgerSearchQuery by rememberSaveable { mutableStateOf("") }
+    var showLedgerFilterSheet by remember { mutableStateOf(false) }
     var showExpenseDialog by remember { mutableStateOf(false) }
     var showReceiveFeeDialogDirect by remember { mutableStateOf(false) }
     var showFamilyFeeDialog by remember { mutableStateOf(false) }
@@ -332,6 +333,28 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
         )
     }
 
+    if (showLedgerFilterSheet) {
+        LedgerFilterBottomSheet(
+            onDismiss = { showLedgerFilterSheet = false },
+            dateFilter = selectedDateFilter,
+            onDateFilterChange = { selectedDateFilter = it },
+            headFilter = selectedHeadFilter,
+            onHeadFilterChange = { selectedHeadFilter = it },
+            sortField = ledgerSortField,
+            sortAscending = ledgerSortAscending,
+            onSortChange = { field, asc ->
+                ledgerSortField = field
+                ledgerSortAscending = asc
+            },
+            onResetFilters = {
+                selectedDateFilter = LedgerDateFilter.ALL
+                selectedHeadFilter = LedgerHeadFilter.ALL
+                ledgerSortField = LedgerSortField.DATE
+                ledgerSortAscending = false
+            }
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
         val metrics by viewModel.financialMetrics.collectAsStateWithLifecycle()
@@ -354,122 +377,129 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
             pendingFeeAlerts.sumOf { it.pendingAmount }
         }
 
-        BoxWithConstraints(
+        // Modern Minimalist Financial Metric Strip (Compact, Clean, ~44dp)
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
         ) {
-            val useScroll = maxWidth < 440.dp
-            if (useScroll) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    FinanceSummaryCard(
-                        title = "Monthly Revenue",
-                        value = "Rs. ${totalMonthlyRevenue.toInt()}",
-                        subtitle = currentMonthYear,
-                        icon = Icons.Default.TrendingUp,
-                        containerColor = MaterialTheme.financialColors.cashContainer,
-                        contentColor = MaterialTheme.financialColors.cash,
-                        modifier = Modifier.width(140.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Metric 1: Monthly Revenue
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .background(MaterialTheme.financialColors.cash, CircleShape)
                     )
-
-                    FinanceSummaryCard(
-                        title = "Pending Fees",
-                        value = "Rs. ${pendingFeesToday.toInt()}",
-                        subtitle = "Overdue Today",
-                        icon = Icons.Default.HourglassEmpty,
-                        containerColor = MaterialTheme.financialColors.expenseContainer,
-                        contentColor = MaterialTheme.financialColors.expense,
-                        modifier = Modifier.width(140.dp)
-                    )
-
-                    FinanceSummaryCard(
-                        title = "Net Balance",
-                        value = "Rs. ${metrics.netBalance.toInt()}",
-                        subtitle = "Total Ledger",
-                        icon = Icons.Default.AccountBalanceWallet,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.width(140.dp)
-                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column {
+                        Text("Revenue", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Rs. ${totalMonthlyRevenue.toInt()}",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.financialColors.cash
+                        )
+                    }
                 }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    FinanceSummaryCard(
-                        title = "Monthly Revenue",
-                        value = "Rs. ${totalMonthlyRevenue.toInt()}",
-                        subtitle = currentMonthYear,
-                        icon = Icons.Default.TrendingUp,
-                        containerColor = MaterialTheme.financialColors.cashContainer,
-                        contentColor = MaterialTheme.financialColors.cash,
-                        modifier = Modifier.weight(1f)
-                    )
 
-                    FinanceSummaryCard(
-                        title = "Pending Fees",
-                        value = "Rs. ${pendingFeesToday.toInt()}",
-                        subtitle = "Overdue Today",
-                        icon = Icons.Default.HourglassEmpty,
-                        containerColor = MaterialTheme.financialColors.expenseContainer,
-                        contentColor = MaterialTheme.financialColors.expense,
-                        modifier = Modifier.weight(1f)
-                    )
+                Box(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(1.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                )
 
-                    FinanceSummaryCard(
-                        title = "Net Balance",
-                        value = "Rs. ${metrics.netBalance.toInt()}",
-                        subtitle = "Total Ledger",
-                        icon = Icons.Default.AccountBalanceWallet,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f)
+                // Metric 2: Pending Overdue Fees
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .background(MaterialTheme.financialColors.expense, CircleShape)
                     )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column {
+                        Text("Overdue", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Rs. ${pendingFeesToday.toInt()}",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.financialColors.expense
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(1.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                )
+
+                // Metric 3: Net Cash Balance
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column {
+                        Text("Net Ledger", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Rs. ${metrics.netBalance.toInt()}",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
 
-        // Dual Ledger Controls Card
-        Card(
+        // Modern Minimalist Ledger Control Header
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                .padding(horizontal = 16.dp, vertical = 2.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            // 1. Sleek Segmented Switcher (32dp height)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                        RoundedCornerShape(10.dp)
+                    )
+                    .padding(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                // 1. Sleek Segmented Switcher (Cash Ledger vs Bank Account vs All Ledgers)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                            RoundedCornerShape(12.dp)
-                        )
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    val isCash = activeLedgerType == DomainConstants.MODE_CASH
+                listOf(
+                    Triple(DomainConstants.MODE_CASH, "Cash", Icons.Default.Payments),
+                    Triple(DomainConstants.MODE_BANK, "Bank", Icons.Default.AccountBalance),
+                    Triple("Expense Hub", "Expenses", Icons.Default.ReceiptLong),
+                    Triple("All", "All", Icons.Default.AccountBalanceWallet)
+                ).forEach { (modeKey, label, icon) ->
+                    val isSelected = activeLedgerType == modeKey
                     Surface(
                         modifier = Modifier
                             .weight(1f)
-                            .height(38.dp)
-                            .clip(RoundedCornerShape(9.dp))
-                            .clickable { activeLedgerType = DomainConstants.MODE_CASH },
-                        shape = RoundedCornerShape(9.dp),
-                        color = if (isCash) MaterialTheme.colorScheme.surface else Color.Transparent,
-                        shadowElevation = if (isCash) 1.dp else 0.dp
+                            .height(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { activeLedgerType = modeKey },
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent,
+                        shadowElevation = if (isSelected) 1.dp else 0.dp
                     ) {
                         Row(
                             modifier = Modifier.fillMaxSize(),
@@ -477,272 +507,210 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                Icons.Default.Payments,
+                                icon,
                                 contentDescription = null,
-                                tint = if (isCash) MaterialTheme.financialColors.cash else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(15.dp)
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(13.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                "Cash",
-                                fontSize = 11.5.sp,
-                                fontWeight = if (isCash) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isCash) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    val isBank = activeLedgerType == DomainConstants.MODE_BANK
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(38.dp)
-                            .clip(RoundedCornerShape(9.dp))
-                            .clickable { activeLedgerType = DomainConstants.MODE_BANK },
-                        shape = RoundedCornerShape(9.dp),
-                        color = if (isBank) MaterialTheme.colorScheme.surface else Color.Transparent,
-                        shadowElevation = if (isBank) 1.dp else 0.dp
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                Icons.Default.AccountBalance,
-                                contentDescription = null,
-                                tint = if (isBank) MaterialTheme.financialColors.bank else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                "Bank",
-                                fontSize = 11.5.sp,
-                                fontWeight = if (isBank) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isBank) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    val isExpense = activeLedgerType == "Expense Hub"
-                    Surface(
-                        modifier = Modifier
-                            .weight(1.1f)
-                            .height(38.dp)
-                            .clip(RoundedCornerShape(9.dp))
-                            .clickable { activeLedgerType = "Expense Hub" },
-                        shape = RoundedCornerShape(9.dp),
-                        color = if (isExpense) MaterialTheme.colorScheme.surface else Color.Transparent,
-                        shadowElevation = if (isExpense) 1.dp else 0.dp
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                Icons.Default.ReceiptLong,
-                                contentDescription = null,
-                                tint = if (isExpense) MaterialTheme.financialColors.expense else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                "Expense Hub",
+                                label,
                                 fontSize = 11.sp,
-                                fontWeight = if (isExpense) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isExpense) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    val isAll = activeLedgerType == "All"
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(38.dp)
-                            .clip(RoundedCornerShape(9.dp))
-                            .clickable { activeLedgerType = "All" },
-                        shape = RoundedCornerShape(9.dp),
-                        color = if (isAll) MaterialTheme.colorScheme.surface else Color.Transparent,
-                        shadowElevation = if (isAll) 1.dp else 0.dp
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                Icons.Default.AccountBalanceWallet,
-                                contentDescription = null,
-                                tint = if (isAll) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                "All",
-                                fontSize = 11.5.sp,
-                                fontWeight = if (isAll) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isAll) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 }
+            }
 
-                // 2. Minimalist Quick Action Pills
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Receive Fee
-                    Surface(
-                        modifier = Modifier
-                            .height(34.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { showReceiveFeeDialogDirect = true },
-                        shape = RoundedCornerShape(10.dp),
-                        color = Color(0xFFE8F5E9),
-                        border = BorderStroke(1.dp, Color(0xFFA5D6A7).copy(alpha = 0.5f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.AddCard, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF2E7D32))
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text("Receive Fee", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1B5E20))
-                        }
-                    }
-
-                    // Family Fee
-                    Surface(
-                        modifier = Modifier
-                            .height(34.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { showFamilyFeeDialog = true },
-                        shape = RoundedCornerShape(10.dp),
-                        color = Color(0xFFF3E5F5),
-                        border = BorderStroke(1.dp, Color(0xFFCE93D8).copy(alpha = 0.5f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Groups, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF6A1B9A))
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text("Family Fee", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF4A148C))
-                        }
-                    }
-
-                    // Expense
-                    Surface(
-                        modifier = Modifier
-                            .height(34.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { showExpenseDialog = true },
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.financialColors.expenseContainer.copy(alpha = 0.6f),
-                        border = BorderStroke(1.dp, MaterialTheme.financialColors.expense.copy(alpha = 0.3f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.financialColors.expense)
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text("Expense", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.expense)
-                        }
-                    }
-
-                    // To Bank
-                    Surface(
-                        modifier = Modifier
-                            .height(34.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { showCashToBankDialog = true },
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.financialColors.bankContainer.copy(alpha = 0.6f),
-                        border = BorderStroke(1.dp, MaterialTheme.financialColors.bank.copy(alpha = 0.3f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.AccountBalance, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.financialColors.bank)
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text("To Bank", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.bank)
-                        }
-                    }
-                }
-
-                // 3. Compact Search Bar
+            // 2. Search Bar + Filter Sheet Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // Search field
                 OutlinedTextField(
                     value = ledgerSearchQuery,
                     onValueChange = { ledgerSearchQuery = it },
-                    placeholder = { Text("Search by student, category, memo, or amount...", fontSize = 12.5.sp) },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    placeholder = { Text("Search transactions...", fontSize = 12.sp) },
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Search",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
                     trailingIcon = if (ledgerSearchQuery.isNotEmpty()) {
                         {
-                            IconButton(onClick = { ledgerSearchQuery = "" }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear", modifier = Modifier.size(15.dp))
+                            IconButton(onClick = { ledgerSearchQuery = "" }, modifier = Modifier.size(20.dp)) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear", modifier = Modifier.size(14.dp))
                             }
                         }
                     } else null,
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                    )
                 )
 
-                // 4. Date Filter Chips
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // Dedicated Filter Bottom Sheet Button
+                val hasActiveFilters = selectedDateFilter != LedgerDateFilter.ALL || selectedHeadFilter != LedgerHeadFilter.ALL || ledgerSortField != LedgerSortField.DATE || ledgerSortAscending
+                FilledTonalIconButton(
+                    onClick = { showLedgerFilterSheet = true },
+                    modifier = Modifier.size(42.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = if (hasActiveFilters) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    )
                 ) {
-                    LedgerDateFilter.values().forEach { filter ->
-                        FilterChip(
-                            selected = selectedDateFilter == filter,
-                            onClick = { selectedDateFilter = filter },
-                            label = { Text(filter.label, fontSize = 11.5.sp, fontWeight = if (selectedDateFilter == filter) FontWeight.SemiBold else FontWeight.Normal) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                selectedLabelColor = MaterialTheme.colorScheme.primary
-                            ),
-                            shape = RoundedCornerShape(8.dp)
+                    Box(contentAlignment = Alignment.TopEnd) {
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = "Ledger Filters",
+                            tint = if (hasActiveFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
                         )
+                        if (hasActiveFilters) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 3. Compact Quick Action Pills (28dp height)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Receive Fee Pill
+                Surface(
+                    modifier = Modifier
+                        .height(28.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { showReceiveFeeDialogDirect = true },
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.financialColors.cashContainer.copy(alpha = 0.7f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.financialColors.cash.copy(alpha = 0.35f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.AddCard, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.financialColors.cash)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Fee", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.cash)
                     }
                 }
 
-                // 5. Head / Category Filter Chips
-                Row(
+                // Family Fee Pill
+                Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .height(28.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { showFamilyFeeDialog = true },
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFF3E5F5),
+                    border = BorderStroke(0.5.dp, Color(0xFFCE93D8).copy(alpha = 0.5f))
                 ) {
-                    LedgerHeadFilter.values().forEach { headFilter ->
-                        FilterChip(
-                            selected = selectedHeadFilter == headFilter,
-                            onClick = { selectedHeadFilter = headFilter },
-                            label = {
-                                Text(
-                                    headFilter.label,
-                                    fontSize = 11.5.sp,
-                                    fontWeight = if (selectedHeadFilter == headFilter) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
-                                selectedLabelColor = MaterialTheme.colorScheme.secondary
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Groups, contentDescription = null, modifier = Modifier.size(12.dp), tint = Color(0xFF6A1B9A))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Family", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF4A148C))
+                    }
+                }
+
+                // Expense Pill
+                Surface(
+                    modifier = Modifier
+                        .height(28.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { showExpenseDialog = true },
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.financialColors.expenseContainer.copy(alpha = 0.7f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.financialColors.expense.copy(alpha = 0.35f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.financialColors.expense)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Expense", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.expense)
+                    }
+                }
+
+                // Transfer Pill
+                Surface(
+                    modifier = Modifier
+                        .height(28.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { showCashToBankDialog = true },
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.financialColors.bankContainer.copy(alpha = 0.7f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.financialColors.bank.copy(alpha = 0.35f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(13.dp), tint = MaterialTheme.financialColors.bank)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Transfer", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.bank)
+                    }
+                }
+
+                // Active Filter summary tag (if date filter is applied)
+                if (selectedDateFilter != LedgerDateFilter.ALL) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                        modifier = Modifier.clickable { selectedDateFilter = LedgerDateFilter.ALL }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(selectedDateFilter.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(10.dp), tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+
+                // Active Filter summary tag (if head filter is applied)
+                if (selectedHeadFilter != LedgerHeadFilter.ALL) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)),
+                        modifier = Modifier.clickable { selectedHeadFilter = LedgerHeadFilter.ALL }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(selectedHeadFilter.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.secondary)
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(10.dp), tint = MaterialTheme.colorScheme.secondary)
+                        }
                     }
                 }
             }
@@ -1225,44 +1193,44 @@ fun LedgerEntryRow(
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+        shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Left: Icon + Content Details
+            // Left: Compact Squircle Icon + Info
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
-                        .background(containerColor, RoundedCornerShape(12.dp)),
+                        .size(36.dp)
+                        .background(containerColor.copy(alpha = 0.7f), RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = if (isIncome) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                        imageVector = if (isIncome) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
                         contentDescription = null,
                         tint = accentColor,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    // Title Row: Student / Category name + Voucher Badge
+                    // Title Line + Voucher Badge
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
                         val titleText = if (isIncome) {
                             transaction.studentName ?: transaction.category
@@ -1271,8 +1239,8 @@ fun LedgerEntryRow(
                         }
                         Text(
                             text = titleText,
-                            fontWeight = FontWeight.SemiBold,
-                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -1282,93 +1250,42 @@ fun LedgerEntryRow(
                         if (transaction.voucherNo.isNotBlank()) {
                             Surface(
                                 color = containerColor.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(6.dp),
-                                border = BorderStroke(1.dp, accentColor.copy(alpha = 0.3f))
+                                shape = RoundedCornerShape(4.dp),
+                                border = BorderStroke(0.5.dp, accentColor.copy(alpha = 0.3f))
                             ) {
                                 Text(
-                                    text = transaction.voucherNo,
+                                    text = "#${transaction.voucherNo}",
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = accentColor,
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                 )
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(1.dp))
 
-                    // Secondary Line: Category (if income with student name) or Description
-                    if (isIncome && !transaction.studentName.isNullOrBlank() && transaction.category != transaction.studentName) {
-                        val categoryDetails = if (!studentClass.isNullOrBlank()) {
-                            "${transaction.category} • Class: $studentClass"
-                        } else {
-                            transaction.category
+                    // Subtitle: Mode • Class / Payee • Details
+                    val detailLine = buildString {
+                        append(transaction.paymentMode)
+                        if (isIncome && !studentClass.isNullOrBlank()) {
+                            append(" • Cl: $studentClass")
+                        } else if (!isIncome && transaction.payeeName.isNotBlank()) {
+                            append(" • ${transaction.payeeName}")
+                        } else if (transaction.description.isNotBlank()) {
+                            append(" • ${transaction.description}")
                         }
-                        Text(
-                            text = categoryDetails,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
-                    } else if (isIncome && !studentClass.isNullOrBlank()) {
-                        Text(
-                            text = "Class: $studentClass",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
-                    } else if (!isIncome) {
-                        val expenseSubtitle = buildString {
-                            if (transaction.payeeName.isNotBlank()) {
-                                append("To: ${transaction.payeeName}")
-                            }
-                            if (transaction.invoiceNo.isNotBlank()) {
-                                if (isNotEmpty()) append(" • ")
-                                append("Inv: ${transaction.invoiceNo}")
-                            }
-                            if (transaction.description.isNotBlank()) {
-                                if (isNotEmpty()) append(" • ")
-                                append(transaction.description)
-                            }
-                        }
-                        if (expenseSubtitle.isNotBlank()) {
-                            Text(
-                                text = expenseSubtitle,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 11.sp,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
-                        }
+                        append(" • $dateFormatted")
                     }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    // Meta Row: Date, Cashier
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = dateFormatted,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                            fontSize = 10.sp
-                        )
-                        Text("•", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
-                        Text(
-                            text = transaction.recordedBy,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                            fontSize = 10.sp
-                        )
-                    }
+                    Text(
+                        text = detailLine,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 10.5.sp,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
                 }
             }
 
@@ -1384,48 +1301,40 @@ fun LedgerEntryRow(
                         text = "${if (isIncome) "+" else "-"} Rs. ${transaction.amount.toInt()}",
                         color = accentColor,
                         fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.bodyLarge
+                        fontSize = 13.5.sp
                     )
                     if (runningBalance != null) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-                            modifier = Modifier.padding(top = 2.dp)
-                        ) {
-                            Text(
-                                text = "Bal: Rs. ${runningBalance.toInt()}",
-                                fontSize = 9.5.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
-                            )
-                        }
+                        Text(
+                            text = "Bal: ${runningBalance.toInt()}",
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        )
                     }
                 }
 
                 if (onPrintSlip != null) {
                     IconButton(
                         onClick = { onPrintSlip(transaction) },
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(28.dp)
                     ) {
                         Icon(
                             Icons.Default.Print,
                             contentDescription = "Print Fee Slip",
                             tint = MaterialTheme.financialColors.cash,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                     }
                 } else if (!isIncome && onPrintExpenseVoucher != null) {
                     IconButton(
                         onClick = { onPrintExpenseVoucher(transaction) },
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(28.dp)
                     ) {
                         Icon(
                             Icons.Default.ReceiptLong,
                             contentDescription = "Print Expense Voucher / Payslip",
                             tint = if (transaction.category == DomainConstants.CAT_STAFF_SALARY) MaterialTheme.colorScheme.primary else MaterialTheme.financialColors.expense,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                     }
                 }
@@ -1433,16 +1342,217 @@ fun LedgerEntryRow(
                 if (showDelete) {
                     IconButton(
                         onClick = onDelete,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(28.dp)
                     ) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = "Delete entry",
-                            tint = MaterialTheme.financialColors.expense.copy(alpha = 0.7f),
-                            modifier = Modifier.size(16.dp)
+                            tint = MaterialTheme.financialColors.expense.copy(alpha = 0.6f),
+                            modifier = Modifier.size(15.dp)
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LedgerFilterBottomSheet(
+    onDismiss: () -> Unit,
+    dateFilter: LedgerDateFilter,
+    onDateFilterChange: (LedgerDateFilter) -> Unit,
+    headFilter: LedgerHeadFilter,
+    onHeadFilterChange: (LedgerHeadFilter) -> Unit,
+    sortField: LedgerSortField,
+    sortAscending: Boolean,
+    onSortChange: (LedgerSortField, Boolean) -> Unit,
+    onResetFilters: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        modifier = Modifier.imePadding()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Tune,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Ledger Filters & Sort",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                TextButton(
+                    onClick = onResetFilters,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Reset", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+
+            // Section 1: Date Range
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Date Range",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    LedgerDateFilter.values().forEach { filter ->
+                        val isSelected = dateFilter == filter
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onDateFilterChange(filter) },
+                            label = { Text(filter.label, fontSize = 11.5.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal) },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                selectedLabelColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
+                }
+            }
+
+            // Section 2: Financial Head / Category
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Category / Account Head",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    LedgerHeadFilter.values().forEach { h ->
+                        val isSelected = headFilter == h
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onHeadFilterChange(h) },
+                            label = {
+                                Text(
+                                    h.label,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
+                                selectedLabelColor = MaterialTheme.colorScheme.secondary
+                            )
+                        )
+                    }
+                }
+            }
+
+            // Section 3: Sort Field & Direction
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Sort Transactions By",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    LedgerSortField.values().forEach { field ->
+                        val isSelected = sortField == field
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                if (isSelected) {
+                                    onSortChange(field, !sortAscending)
+                                } else {
+                                    onSortChange(field, false)
+                                }
+                            },
+                            label = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        when (field) {
+                                            LedgerSortField.DATE -> "Date"
+                                            LedgerSortField.NAME -> "Name"
+                                            LedgerSortField.AMOUNT -> "Amount"
+                                        },
+                                        fontSize = 11.5.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                    if (isSelected) {
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Icon(
+                                            if (sortAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Done Button
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Text("Apply & View Results", fontWeight = FontWeight.Bold, fontSize = 13.sp)
             }
         }
     }

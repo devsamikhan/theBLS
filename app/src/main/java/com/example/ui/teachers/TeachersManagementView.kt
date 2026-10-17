@@ -110,136 +110,156 @@ fun TeachersManagementView(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // 1. Top Executive Metrics Summary Cards
-        Row(
+        // 1. Sleek Minimalist Staff Metric Strip (Compact ~44dp)
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
         ) {
-            TeacherStatCard(
-                title = "Total Staff",
-                value = "$totalTeachersCount",
-                subtitle = "$activeTeachersCount Active • $leftTeachersCount Left",
-                icon = Icons.Default.Groups,
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                contentColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Metric 1: Staff Count
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(7.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column {
+                        Text("Staff", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "$activeTeachersCount Active • $leftTeachersCount Left",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
 
-            TeacherStatCard(
-                title = "Monthly Payroll",
-                value = "Rs. ${monthlySalaryBudget.toInt()}",
-                subtitle = "Budget Target",
-                icon = Icons.Default.AccountBalanceWallet,
-                containerColor = MaterialTheme.financialColors.cashContainer.copy(alpha = 0.7f),
-                contentColor = MaterialTheme.financialColors.cash,
-                modifier = Modifier.weight(1.1f)
-            )
+                Box(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(1.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                )
 
-            TeacherStatCard(
-                title = "Disbursed",
-                value = "Rs. ${disbursedThisMonth.toInt()}",
-                subtitle = currentMonth,
-                icon = Icons.Default.Payments,
-                containerColor = MaterialTheme.financialColors.expenseContainer.copy(alpha = 0.7f),
-                contentColor = MaterialTheme.financialColors.expense,
-                modifier = Modifier.weight(1.1f)
-            )
+                // Metric 2: Monthly Budget
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(7.dp).background(MaterialTheme.financialColors.cash, CircleShape))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column {
+                        Text("Payroll Budget", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Rs. ${monthlySalaryBudget.toInt()}",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.financialColors.cash
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(1.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                )
+
+                // Metric 3: Disbursed
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(7.dp).background(MaterialTheme.financialColors.expense, CircleShape))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column {
+                        Text("Disbursed", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Rs. ${disbursedThisMonth.toInt()}",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.financialColors.expense
+                        )
+                    }
+                }
+            }
         }
 
-        // 2. Control Bar: Search + Status Filter Chips + Add Teacher Button
-        Card(
+        // 2. Streamlined Search & Filter Row
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-            shape = RoundedCornerShape(16.dp)
+                .padding(horizontal = 16.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Search Input & Add Button Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search by name, designation, phone...", fontSize = 13.sp) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }, modifier = Modifier.size(24.dp)) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            focusedContainerColor = MaterialTheme.colorScheme.surface
-                        )
+            // Search Input
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search staff...", fontSize = 12.sp) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
                     )
-
-                    Button(
-                        onClick = {
-                            teacherToEdit = null
-                            showAddEditDialog = true
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
-                    ) {
-                        Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Add Staff", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                },
+                trailingIcon = if (searchQuery.isNotEmpty()) {
+                    {
+                        IconButton(onClick = { searchQuery = "" }, modifier = Modifier.size(20.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                        }
                     }
-                }
+                } else null,
+                singleLine = true,
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.weight(1f),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                )
+            )
 
-                // Filter Chips Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    listOf("All", "Active", "Left").forEach { filter ->
-                        val isSelected = selectedStatusFilter == filter
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { selectedStatusFilter = filter },
-                            label = {
-                                Text(
-                                    when (filter) {
-                                        "All" -> "All ($totalTeachersCount)"
-                                        "Active" -> "Active ($activeTeachersCount)"
-                                        else -> "Left ($leftTeachersCount)"
-                                    },
-                                    fontSize = 11.5.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.primary
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isSelected,
-                                borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                            )
+            // Status Filter Chips
+            listOf("All", "Active", "Left").forEach { filter ->
+                val isSelected = selectedStatusFilter == filter
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { selectedStatusFilter = filter },
+                    label = {
+                        Text(
+                            filter,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
-                    }
-                }
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.height(34.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+
+            // Add Staff Button
+            FilledTonalIconButton(
+                onClick = {
+                    teacherToEdit = null
+                    showAddEditDialog = true
+                },
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.size(42.dp),
+                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(Icons.Default.PersonAdd, contentDescription = "Add Staff", tint = Color.White, modifier = Modifier.size(18.dp))
             }
         }
 
@@ -519,30 +539,33 @@ private fun TeacherCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Header Row: Avatar, Name & Designation, Status Badge, 3-dots Menu
+            // Left: Compact Squircle Avatar + Staff Name & Role
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
-                // Avatar Circle
                 Surface(
-                    shape = CircleShape,
+                    shape = RoundedCornerShape(10.dp),
                     color = if (isActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.size(42.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = teacher.name.take(2).uppercase(),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
+                            fontSize = 13.5.sp,
                             color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -550,68 +573,155 @@ private fun TeacherCard(
 
                 Spacer(modifier = Modifier.width(10.dp))
 
-                // Name & Role
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Name + Status
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
                         Text(
                             teacher.name,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = MaterialTheme.colorScheme.onSurface
+                            fontSize = 13.5.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                         if (!isActive) {
-                            Spacer(modifier = Modifier.width(6.dp))
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(4.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                             ) {
-                                Text("Left", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
+                                Text("Left", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        teacher.designation.ifBlank { "Staff" } + if (teacher.qualification.isNotBlank()) " • ${teacher.qualification}" else "",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
 
-                // Month Status Badge
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (isPaidThisMonth) MaterialTheme.financialColors.cashContainer else MaterialTheme.financialColors.amberContainer.copy(alpha = 0.5f)
-                ) {
+                    Spacer(modifier = Modifier.height(1.dp))
+
+                    // Role + Phone + WhatsApp icon
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Icon(
-                            imageVector = if (isPaidThisMonth) Icons.Default.CheckCircle else Icons.Default.Schedule,
-                            contentDescription = null,
-                            tint = if (isPaidThisMonth) MaterialTheme.financialColors.cash else MaterialTheme.financialColors.amber,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (isPaidThisMonth) "Paid ($currentMonth)" else "Pending ($currentMonth)",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isPaidThisMonth) MaterialTheme.financialColors.cash else MaterialTheme.financialColors.amber
+                            teacher.designation.ifBlank { "Staff" },
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
+
+                        if (teacher.contactNumber.isNotBlank()) {
+                            Text("•", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                            Text(
+                                teacher.contactNumber,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Icon(
+                                Icons.Default.Chat,
+                                contentDescription = "WhatsApp",
+                                tint = Color(0xFF25D366),
+                                modifier = Modifier
+                                    .size(13.dp)
+                                    .clickable {
+                                        val cleanNum = InputFormatUtils.sanitizePakistanPhoneForWhatsApp(teacher.contactNumber)
+                                        val uri = Uri.parse("https://api.whatsapp.com/send?phone=$cleanNum")
+                                        val intent = Intent(Intent.ACTION_VIEW, uri)
+                                        try {
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Cannot open WhatsApp: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Right: Salary Tag + Salary Pay Status Button + 3-dots Menu
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Interactive Pay Status Button: 1-tap pays salary if unpaid!
+                if (isPaidThisMonth) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.financialColors.cashContainer.copy(alpha = 0.8f),
+                        border = BorderStroke(0.5.dp, MaterialTheme.financialColors.cash.copy(alpha = 0.35f)),
+                        modifier = Modifier.clickable { onPrintPayslip() }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.financialColors.cash, modifier = Modifier.size(11.dp))
+                            Text("Paid", fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.cash)
+                        }
+                    }
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.financialColors.amberContainer.copy(alpha = 0.8f),
+                        border = BorderStroke(0.5.dp, MaterialTheme.financialColors.amber.copy(alpha = 0.35f)),
+                        modifier = Modifier.clickable { onPaySalary() }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Text(
+                                "Rs. ${teacher.monthlySalary.toInt()}",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.financialColors.amber
+                            )
+                            Icon(Icons.Default.Add, contentDescription = "Pay Salary", tint = MaterialTheme.financialColors.amber, modifier = Modifier.size(11.dp))
+                        }
                     }
                 }
 
-                // More Menu
+                // 3-dots Menu
                 Box {
-                    IconButton(onClick = { showMenu = true }, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    IconButton(onClick = { showMenu = true }, modifier = Modifier.size(30.dp)) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                     }
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
+                        DropdownMenuItem(
+                            text = { Text("Pay Salary") },
+                            onClick = {
+                                showMenu = false
+                                onPaySalary()
+                            },
+                            leadingIcon = { Icon(Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.financialColors.cash) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Print Payslip") },
+                            onClick = {
+                                showMenu = false
+                                onPrintPayslip()
+                            },
+                            leadingIcon = { Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Salary History") },
+                            onClick = {
+                                showMenu = false
+                                onViewHistory()
+                            },
+                            leadingIcon = { Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        )
                         DropdownMenuItem(
                             text = { Text("Edit Details") },
                             onClick = {
@@ -628,14 +738,6 @@ private fun TeacherCard(
                             },
                             leadingIcon = { Icon(if (isActive) Icons.Default.PersonOff else Icons.Default.Person, contentDescription = null, modifier = Modifier.size(18.dp)) }
                         )
-                        DropdownMenuItem(
-                            text = { Text("Salary History") },
-                            onClick = {
-                                showMenu = false
-                                onViewHistory()
-                            },
-                            leadingIcon = { Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        )
                         HorizontalDivider()
                         DropdownMenuItem(
                             text = { Text("Delete Staff", color = MaterialTheme.financialColors.expense) },
@@ -646,116 +748,6 @@ private fun TeacherCard(
                             leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.financialColors.expense, modifier = Modifier.size(18.dp)) }
                         )
                     }
-                }
-            }
-
-            // Info Details Row: Contact, CNIC, Monthly Salary
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Phone & Direct Call / WhatsApp
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        teacher.contactNumber.ifBlank { "No phone" },
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    if (teacher.contactNumber.isNotBlank()) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        // Call button
-                        IconButton(
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${teacher.contactNumber.trim()}"))
-                                context.startActivity(intent)
-                            },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(Icons.Default.Call, contentDescription = "Call", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
-                        }
-
-                        // WhatsApp button
-                        IconButton(
-                            onClick = {
-                                val cleanNum = InputFormatUtils.sanitizePakistanPhoneForWhatsApp(teacher.contactNumber)
-                                val uri = Uri.parse("https://api.whatsapp.com/send?phone=$cleanNum")
-                                val intent = Intent(Intent.ACTION_VIEW, uri)
-                                try {
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "Cannot open WhatsApp: ${e.message}", Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(Icons.Default.Chat, contentDescription = "WhatsApp", tint = Color(0xFF25D366), modifier = Modifier.size(14.dp))
-                        }
-                    }
-                }
-
-                // Salary Tag
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "Salary: ",
-                        fontSize = 11.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "Rs. ${teacher.monthlySalary.toInt()}/mo",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.financialColors.cash
-                    )
-                }
-            }
-
-            // Action Buttons Row: Pay Salary & Print Payslip
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(
-                    onClick = onPaySalary,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isPaidThisMonth) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.financialColors.cash
-                    ),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isPaidThisMonth) Icons.Default.PriceCheck else Icons.Default.Payments,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = if (isPaidThisMonth) MaterialTheme.colorScheme.primary else Color.White
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = if (isPaidThisMonth) "Pay Salary Again" else "Pay Monthly Salary",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isPaidThisMonth) MaterialTheme.colorScheme.primary else Color.White
-                    )
-                }
-
-                OutlinedButton(
-                    onClick = onPrintPayslip,
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                ) {
-                    Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Payslip", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
