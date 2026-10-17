@@ -110,11 +110,11 @@ fun TeachersManagementView(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // 1. Sleek Minimalist Staff Metric Strip (Compact ~44dp)
+        // 1. Sleek Minimalist Staff Metric Strip (Compact ~44dp, Responsive Equal-Weight)
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp),
+                .padding(horizontal = 16.dp, vertical = 4.dp),
             shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
             border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
@@ -122,84 +122,98 @@ fun TeachersManagementView(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(horizontal = 8.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 // Metric 1: Staff Count
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Box(modifier = Modifier.size(7.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Column {
-                        Text("Staff", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Staff", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                         Text(
-                            "$activeTeachersCount Active • $leftTeachersCount Left",
+                            "$activeTeachersCount Active",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1
                         )
                     }
                 }
 
                 Box(
                     modifier = Modifier
-                        .height(20.dp)
+                        .height(18.dp)
                         .width(1.dp)
                         .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 )
 
                 // Metric 2: Monthly Budget
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Box(modifier = Modifier.size(7.dp).background(MaterialTheme.financialColors.cash, CircleShape))
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Column {
-                        Text("Payroll Budget", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Budget", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                         Text(
                             "Rs. ${monthlySalaryBudget.toInt()}",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.financialColors.cash
+                            color = MaterialTheme.financialColors.cash,
+                            maxLines = 1
                         )
                     }
                 }
 
                 Box(
                     modifier = Modifier
-                        .height(20.dp)
+                        .height(18.dp)
                         .width(1.dp)
                         .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 )
 
                 // Metric 3: Disbursed
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Box(modifier = Modifier.size(7.dp).background(MaterialTheme.financialColors.expense, CircleShape))
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Column {
-                        Text("Disbursed", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Disbursed", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                         Text(
                             "Rs. ${disbursedThisMonth.toInt()}",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.financialColors.expense
+                            color = MaterialTheme.financialColors.expense,
+                            maxLines = 1
                         )
                     }
                 }
             }
         }
 
-        // 2. Streamlined Search & Filter Row
+        // 2. Responsive Controls: Search Bar + Add Staff Button
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 3.dp),
+                .padding(horizontal = 16.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Search Input
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search staff...", fontSize = 12.sp) },
+                placeholder = { Text("Search", fontSize = 12.sp) },
                 leadingIcon = {
                     Icon(
                         Icons.Default.Search,
@@ -225,41 +239,72 @@ fun TeachersManagementView(
                 )
             )
 
-            // Status Filter Chips
-            listOf("All", "Active", "Left").forEach { filter ->
-                val isSelected = selectedStatusFilter == filter
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { selectedStatusFilter = filter },
-                    label = {
-                        Text(
-                            filter,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.height(34.dp),
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-            }
-
-            // Add Staff Button
-            FilledTonalIconButton(
+            // Primary Add Staff Button
+            Button(
                 onClick = {
                     teacherToEdit = null
                     showAddEditDialog = true
                 },
                 shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.size(42.dp),
-                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                modifier = Modifier.height(44.dp)
             ) {
-                Icon(Icons.Default.PersonAdd, contentDescription = "Add Staff", tint = Color.White, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Add Staff", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        // 3. Status Filter Chips Row (Responsive 3-Column Segment)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 3.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            listOf(
+                Triple("All", "All Staff", teachers.size),
+                Triple("Active", "Active", activeTeachersCount),
+                Triple("Left", "Left", leftTeachersCount)
+            ).forEach { (filterKey, label, count) ->
+                val isSelected = selectedStatusFilter == filterKey
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { selectedStatusFilter = filterKey },
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                    border = BorderStroke(0.5.dp, if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            label,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                count.toString(),
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
 

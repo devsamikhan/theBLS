@@ -519,6 +519,26 @@ Warm regards,
         val isWideScreen = maxWidth >= 840.dp
 
         Column(modifier = Modifier.fillMaxSize()) {
+            // Page Heading & Subheading
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 2.dp)
+            ) {
+                Text(
+                    text = if (selectedSection == 0) "Students Directory" else "Teachers & Staff",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = if (selectedSection == 0) "Manage student enrollments, profiles and fee dues" else "Staff payroll budget, salary disbursement and records",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             // Segmented Switcher Pill: Students Directory vs Teachers & Staff
             Surface(
                 modifier = Modifier
@@ -856,7 +876,7 @@ private fun StudentsListControlHeader(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchChange,
-                placeholder = { Text("Search student, father, reg#, class...", fontSize = 12.5.sp) },
+                placeholder = { Text("Search", fontSize = 12.5.sp) },
                 modifier = Modifier
                     .weight(1f)
                     .testTag("student_search_input"),
@@ -2613,7 +2633,7 @@ fun BulkFeeReceptionDialog(
                 OutlinedTextField(
                     value = searchBulkQuery,
                     onValueChange = { searchBulkQuery = it },
-                    placeholder = { Text("Filter students by name or class...") },
+                    placeholder = { Text("Search") },
                     leadingIcon = { Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(16.dp)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),

@@ -225,7 +225,7 @@ fun FamilyFeeCollectionDialog(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search father name, phone, or CNIC...") },
+                        placeholder = { Text("Search") },
                         leadingIcon = {
                             Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         },

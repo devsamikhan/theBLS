@@ -377,11 +377,31 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
             pendingFeeAlerts.sumOf { it.pendingAmount }
         }
 
-        // Modern Minimalist Financial Metric Strip (Compact, Clean, ~44dp)
+        // Page Heading & Subheading
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 2.dp)
+        ) {
+            Text(
+                text = "Financial Ledger",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "Real-time cash flow, bank transactions and expense tracking",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        // Modern Minimalist Financial Metric Strip (Compact, Clean, ~44dp, Responsive)
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp),
+                .padding(horizontal = 16.dp, vertical = 4.dp),
             shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
             border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
@@ -389,77 +409,91 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(horizontal = 8.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 // Metric 1: Monthly Revenue
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Box(
                         modifier = Modifier
                             .size(7.dp)
                             .background(MaterialTheme.financialColors.cash, CircleShape)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Column {
-                        Text("Revenue", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Revenue", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                         Text(
                             "Rs. ${totalMonthlyRevenue.toInt()}",
-                            fontSize = 12.5.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.financialColors.cash
+                            color = MaterialTheme.financialColors.cash,
+                            maxLines = 1
                         )
                     }
                 }
 
                 Box(
                     modifier = Modifier
-                        .height(20.dp)
+                        .height(18.dp)
                         .width(1.dp)
                         .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 )
 
                 // Metric 2: Pending Overdue Fees
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Box(
                         modifier = Modifier
                             .size(7.dp)
                             .background(MaterialTheme.financialColors.expense, CircleShape)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Column {
-                        Text("Overdue", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Overdue", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                         Text(
                             "Rs. ${pendingFeesToday.toInt()}",
-                            fontSize = 12.5.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.financialColors.expense
+                            color = MaterialTheme.financialColors.expense,
+                            maxLines = 1
                         )
                     }
                 }
 
                 Box(
                     modifier = Modifier
-                        .height(20.dp)
+                        .height(18.dp)
                         .width(1.dp)
                         .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 )
 
                 // Metric 3: Net Cash Balance
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Box(
                         modifier = Modifier
                             .size(7.dp)
                             .background(MaterialTheme.colorScheme.primary, CircleShape)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Column {
-                        Text("Net Ledger", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Net Ledger", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                         Text(
                             "Rs. ${metrics.netBalance.toInt()}",
-                            fontSize = 12.5.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1
                         )
                     }
                 }
@@ -534,7 +568,7 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
                 OutlinedTextField(
                     value = ledgerSearchQuery,
                     onValueChange = { ledgerSearchQuery = it },
-                    placeholder = { Text("Search transactions...", fontSize = 12.sp) },
+                    placeholder = { Text("Search", fontSize = 12.sp) },
                     modifier = Modifier.weight(1f),
                     leadingIcon = {
                         Icon(
@@ -820,15 +854,18 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
             }
         }
 
-        // Section Title & Sorting Header
+        // 1. Title + Entry Count + Action Pills
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 6.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 val ledgerTitle = when (activeLedgerType) {
                     DomainConstants.MODE_CASH -> "Cash Ledger"
                     DomainConstants.MODE_BANK -> "Bank Account"
@@ -840,7 +877,6 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.width(8.dp))
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(6.dp)
@@ -853,7 +889,13 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(6.dp))
+            }
+
+            // Quick Export Action Pills
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
                 Surface(
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     shape = RoundedCornerShape(6.dp),
@@ -925,8 +967,23 @@ fun LedgerTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
                     }
                 }
             }
+        }
 
-            // Compact Sorting Controls Row
+        // 2. Dedicated Responsive Sorting Strip
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Sort by:",
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -1978,7 +2035,7 @@ fun ReceiveFeeDialogDirect(
                     OutlinedTextField(
                         value = studentQuery,
                         onValueChange = { studentQuery = it },
-                        placeholder = { Text("Search Name or Registration No...") },
+                        placeholder = { Text("Search") },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         shape = RoundedCornerShape(12.dp)
