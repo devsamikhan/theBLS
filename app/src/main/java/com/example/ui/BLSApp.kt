@@ -593,7 +593,6 @@ fun DashboardContainer(viewModel: AppViewModel) {
                         windowInsets = NavigationBarDefaults.windowInsets,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(64.dp)
                             .drawBehind {
                                 drawLine(
                                     color = borderLineColor,
@@ -602,7 +601,6 @@ fun DashboardContainer(viewModel: AppViewModel) {
                                     strokeWidth = 1f
                                 )
                             }
-                            .zIndex(100f)
                     ) {
                         NavigationBarItem(
                             selected = currentTab == 0,
