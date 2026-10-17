@@ -19,27 +19,27 @@ import androidx.compose.ui.graphics.Color
  */
 
 // ---------------------------------------------------------------------
-// 1. PRIMARY: Confident Sapphire Slate (Institutional Brand & Accents)
+// 1. PRIMARY: BLS Official Emerald Green (Institutional Brand & Accents)
 // ---------------------------------------------------------------------
-val M3PrimaryLight = Color(0xFF0F52BA)          // Deep Sapphire
+val M3PrimaryLight = Color(0xFF0A7E3B)          // Deep Royal Emerald (Logo-Matched)
 val M3OnPrimaryLight = Color(0xFFFFFFFF)
-val M3PrimaryContainerLight = Color(0xFFEFF6FF) // Mist Blue-50
-val M3OnPrimaryContainerLight = Color(0xFF1E3A8A)
+val M3PrimaryContainerLight = Color(0xFFE8F5E9) // Mint/Sage Tint-50
+val M3OnPrimaryContainerLight = Color(0xFF003915)
 
-val M3PrimaryDark = Color(0xFF60A5FA)           // Soft Sky-400
-val M3OnPrimaryDark = Color(0xFF0F172A)
-val M3PrimaryContainerDark = Color(0xFF1E3A8A)
-val M3OnPrimaryContainerDark = Color(0xFFDBEAFE)
+val M3PrimaryDark = Color(0xFF34D399)           // Vibrant Emerald-400 (High contrast on Obsidian)
+val M3OnPrimaryDark = Color(0xFF003816)
+val M3PrimaryContainerDark = Color(0xFF065F46)  // Rich Deep Forest
+val M3OnPrimaryContainerDark = Color(0xFFA7F3D0)
 
 // ---------------------------------------------------------------------
-// 2. SECONDARY: Neutral Slate (Structural Balance & Metadata)
+// 2. SECONDARY: Platinum Silver & Slate (Logo Metallic Shield)
 // ---------------------------------------------------------------------
 val M3SecondaryLight = Color(0xFF475569)        // Slate-600
 val M3OnSecondaryLight = Color(0xFFFFFFFF)
-val M3SecondaryContainerLight = Color(0xFFF1F5F9) // Slate-100
+val M3SecondaryContainerLight = Color(0xFFF1F5F9) // Platinum Slate-100
 val M3OnSecondaryContainerLight = Color(0xFF0F172A)
 
-val M3SecondaryDark = Color(0xFF94A3B8)         // Slate-400
+val M3SecondaryDark = Color(0xFF94A3B8)         // Platinum Silver Slate-400
 val M3OnSecondaryDark = Color(0xFF0F172A)
 val M3SecondaryContainerDark = Color(0xFF1E293B) // Slate-800
 val M3OnSecondaryContainerDark = Color(0xFFF1F5F9)
@@ -71,25 +71,25 @@ val M3ErrorContainerDark = Color(0xFF881337)
 val M3OnErrorContainerDark = Color(0xFFFFE4E6)
 
 // ---------------------------------------------------------------------
-// 5. SURFACES & BACKGROUNDS (Clean, Calm, Crisp Minimalist Surfaces)
+// 5. SURFACES & BACKGROUNDS (Obsidian Graphite & Platinum Silver)
 // ---------------------------------------------------------------------
 val M3BackgroundLight = Color(0xFFF8FAFC)       // Crisp Slate-50
 val M3OnBackgroundLight = Color(0xFF0F172A)     // Ink Black Slate-900
 val M3SurfaceLight = Color(0xFFFFFFFF)          // Pure Card White
 val M3OnSurfaceLight = Color(0xFF0F172A)
-val M3SurfaceVariantLight = Color(0xFFF1F5F9)   // Soft Slate-100 for sub-cards
+val M3SurfaceVariantLight = Color(0xFFF1F5F9)   // Soft Platinum-100 for sub-cards
 val M3OnSurfaceVariantLight = Color(0xFF64748B) // Slate-500 for secondary labels
 val M3OutlineLight = Color(0xFFCBD5E1)          // Slate-300
-val M3OutlineVariantLight = Color(0xFFE2E8F0)   // Slate-200 (Hairline 1dp border)
+val M3OutlineVariantLight = Color(0xFFE2E8F0)   // Silver Hairline 1dp border
 
-val M3BackgroundDark = Color(0xFF0B0F17)        // OLED Deep Slate
+val M3BackgroundDark = Color(0xFF0D1117)        // Deep Obsidian Graphite
 val M3OnBackgroundDark = Color(0xFFF8FAFC)
-val M3SurfaceDark = Color(0xFF131B2E)           // Deep Slate Card Surface
+val M3SurfaceDark = Color(0xFF161B22)           // Refined Obsidian Surface
 val M3OnSurfaceDark = Color(0xFFF8FAFC)
-val M3SurfaceVariantDark = Color(0xFF1E293B)    // Slate-800
-val M3OnSurfaceVariantDark = Color(0xFF94A3B8)  // Slate-400
-val M3OutlineDark = Color(0xFF475569)           // Slate-600
-val M3OutlineVariantDark = Color(0xFF1E293B)    // Slate-800 Hairline border
+val M3SurfaceVariantDark = Color(0xFF21262D)    // Graphite-800
+val M3OnSurfaceVariantDark = Color(0xFF94A3B8)  // Platinum-400
+val M3OutlineDark = Color(0xFF30363D)           // Obsidian Silver Outline
+val M3OutlineVariantDark = Color(0xFF21262D)    // Hairline border
 
 // =====================================================================
 // DOMAIN-SPECIFIC M3 EXTENSION: FINANCIAL COLOR SCHEME
@@ -214,7 +214,7 @@ val BlsDarkOnAccentContainer = M3OnPrimaryContainerDark
 val BlsDarkTextPrimary = M3OnBackgroundDark
 val BlsDarkTextSecondary = M3OnSurfaceVariantDark
 val BlsDarkBorder = M3OutlineDark
-val BlsDarkBottomNavBackground = Color(0xFF0F172A)
+val BlsDarkBottomNavBackground = Color(0xFF161B22)
 
 val BlsGreenPositive = Color(0xFF059669)
 val BlsGreenLightPositive = Color(0xFFECFDF5)
