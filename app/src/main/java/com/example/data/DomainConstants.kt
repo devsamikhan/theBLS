@@ -19,6 +19,7 @@ object DomainConstants {
     const val CAT_ANNUAL_CHARGES = "Annual Charges"
     const val CAT_OTHER_CHARGES = "Other Charges"
     const val CAT_EXAM_FEE = "Exam Fee"
+    const val CAT_FINE_LATE_FEE = "Late Fee / Fine"
 
     const val CAT_BUILDING_RENT = "Building Rent"
     const val CAT_TEACHERS_PAY = "Teachers Pay"
@@ -159,7 +160,17 @@ object DomainConstants {
     }
 
     /**
-     * Calculates previous unpaid months' arrears (up to 6 months) for a given student.
+     * Extracts embedded late fee fine amount from payment description if present (e.g. "Includes Late Fine: Rs. 300").
+     */
+    fun extractLateFineFromDescription(description: String?): Double {
+        if (description.isNullOrBlank()) return 0.0
+        val regex = Regex("Late Fine:\\s*Rs\\.?\\s*(\\d+)", RegexOption.IGNORE_CASE)
+        val match = regex.find(description) ?: return 0.0
+        return match.groupValues.getOrNull(1)?.toDoubleOrNull() ?: 0.0
+    }
+
+    /**
+     * Calculates previous unpaid months' arrears (up to 12 months) for a given student.
      */
     fun calculateMultiMonthArrears(
         admissionDate: Long,
@@ -190,14 +201,17 @@ object DomainConstants {
         }
 
         var arrears = 0.0
-        for (i in 0 until 6) {
+        for (i in 0 until 12) {
             if (tempCal.before(admCal)) break
             val mStr = sdf.format(tempCal.time)
             val paidForMonth = studentTransactions.filter { tx ->
                 tx.isIncome &&
                 tx.category == CAT_FEE_RECEIVED &&
                 tx.monthOfFee.equals(mStr, ignoreCase = true)
-            }.sumOf { it.amount }
+            }.sumOf { tx ->
+                val fine = extractLateFineFromDescription(tx.description)
+                maxOf(0.0, tx.amount - fine)
+            }
 
             val dueForMonth = maxOf(0.0, discountedMonthlyFee - paidForMonth)
             arrears += dueForMonth
@@ -210,6 +224,7 @@ object DomainConstants {
      * Calculates excess advance credit balance in student wallet.
      * When total payments made exceed total obligations (admission + annual + other + tuition across enrolled months),
      * the surplus is retained as advance fee credit.
+     * Note: Late fee penalty fines are non-refundable surcharges and do NOT count as tuition credit.
      */
     fun calculateStudentAdvanceWallet(
         student: Student,
@@ -248,7 +263,10 @@ object DomainConstants {
                 tx.category == CAT_ANNUAL_CHARGES ||
                 tx.category == CAT_OTHER_CHARGES
             )
-        }.sumOf { it.amount }
+        }.sumOf { tx ->
+            val fine = extractLateFineFromDescription(tx.description)
+            maxOf(0.0, tx.amount - fine)
+        }
 
         return maxOf(0.0, totalPaid - totalDemanded)
     }

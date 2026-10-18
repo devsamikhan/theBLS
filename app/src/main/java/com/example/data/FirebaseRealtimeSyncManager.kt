@@ -194,6 +194,7 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
                     put("isDeleted", student.isDeleted)
                 }
                 httpPut(getEndpointUrl("students/${student.id}.json"), json.toString())
+                appDao.markStudentSynced(student.id)
                 _syncState.value = SyncState.SYNCED
                 _lastSyncedAt.value = System.currentTimeMillis()
                 Log.d(TAG, "Student ${student.id} pushed to Firebase successfully.")
@@ -236,6 +237,7 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
                     put("isDeleted", teacher.isDeleted)
                 }
                 httpPut(getEndpointUrl("teachers/${teacher.id}.json"), json.toString())
+                appDao.markTeacherSynced(teacher.id)
                 _syncState.value = SyncState.SYNCED
                 _lastSyncedAt.value = System.currentTimeMillis()
                 Log.d(TAG, "Teacher ${teacher.id} pushed to Firebase successfully.")
@@ -281,6 +283,7 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
                     put("isDeleted", transaction.isDeleted)
                 }
                 httpPut(getEndpointUrl("transactions/${transaction.id}.json"), json.toString())
+                appDao.markTransactionSynced(transaction.id)
                 _syncState.value = SyncState.SYNCED
                 _lastSyncedAt.value = System.currentTimeMillis()
                 Log.d(TAG, "Transaction ${transaction.id} pushed to Firebase successfully.")
@@ -488,7 +491,10 @@ class FirebaseRealtimeSyncManager(private val appDao: AppDao) {
 
             val localTx = appDao.getAllTransactions()
             localTx.forEach { pushTransaction(it) }
-            Log.d(TAG, "Seeded ${localStudents.size} students, ${localTeachers.size} teachers and ${localTx.size} transactions from local Room to Firebase.")
+
+            val localUsers = appDao.getAllUsers()
+            localUsers.forEach { pushUser(it) }
+            Log.d(TAG, "Seeded ${localStudents.size} students, ${localTeachers.size} teachers, ${localTx.size} transactions and ${localUsers.size} users from local Room to Firebase.")
         } catch (e: Exception) {
             Log.e(TAG, "Error seeding local to cloud: ${e.message}")
         }

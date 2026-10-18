@@ -449,6 +449,7 @@ fun TeachersManagementView(
     teacherToPay?.let { teacher ->
         PayTeacherSalaryDialog(
             teacher = teacher,
+            transactions = transactions,
             defaultMonth = currentMonth,
             onDismiss = { teacherToPay = null },
             onConfirm = { amount, month, mode, remarks ->
@@ -954,6 +955,7 @@ fun AddEditTeacherDialog(
 @Composable
 fun PayTeacherSalaryDialog(
     teacher: Teacher,
+    transactions: List<Transaction> = emptyList(),
     defaultMonth: String,
     onDismiss: () -> Unit,
     onConfirm: (amount: Double, month: String, mode: String, remarks: String) -> Unit
@@ -975,6 +977,16 @@ fun PayTeacherSalaryDialog(
         }
         list.distinct()
     }
+
+    val existingSalaryTx = remember(transactions, teacher.id, selectedMonth) {
+        transactions.firstOrNull { tx ->
+            !tx.isIncome &&
+            (tx.category == DomainConstants.CAT_STAFF_SALARY || tx.category == DomainConstants.CAT_TEACHERS_PAY) &&
+            (tx.teacherId == teacher.id || (tx.payeeName.isNotBlank() && tx.payeeName.equals(teacher.name, ignoreCase = true))) &&
+            (tx.monthOfFee == selectedMonth || (tx.monthOfFee.isNullOrBlank() && SimpleDateFormat("MMMM yyyy", Locale.US).format(Date(tx.date)) == selectedMonth))
+        }
+    }
+    var confirmDuplicatePayment by remember(selectedMonth) { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1001,6 +1013,43 @@ fun PayTeacherSalaryDialog(
                     Column(modifier = Modifier.padding(10.dp)) {
                         Text(teacher.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Text("${teacher.designation} • Base Salary: Rs. ${teacher.monthlySalary.toInt()}", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+
+                // Duplicate Payment Alert
+                if (existingSalaryTx != null) {
+                    val dateFormatted = remember(existingSalaryTx.date) {
+                        SimpleDateFormat("dd MMM yyyy", Locale.US).format(Date(existingSalaryTx.date))
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.financialColors.goldContainer,
+                        border = BorderStroke(1.dp, MaterialTheme.financialColors.goldBadge),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.financialColors.goldBadge, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Salary Already Paid For $selectedMonth", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.financialColors.goldBadge)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "Rs. ${existingSalaryTx.amount.toInt()} was disbursed on $dateFormatted (Voucher #${existingSalaryTx.voucherNo}).",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = confirmDuplicatePayment,
+                                    onCheckedChange = { confirmDuplicatePayment = it },
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("I confirm this is an intentional additional payment", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
                     }
                 }
 
@@ -1087,9 +1136,13 @@ fun PayTeacherSalaryDialog(
                     if (amt <= 0) return@Button
                     onConfirm(amt, selectedMonth, paymentMode, remarks.trim())
                 },
+                enabled = (amountStr.toDoubleOrNull() ?: 0.0) > 0 && (existingSalaryTx == null || confirmDuplicatePayment),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.financialColors.cash)
             ) {
-                Text("Confirm & Print Payslip", color = Color.White)
+                Text(
+                    if (existingSalaryTx != null) "Confirm Additional Payment" else "Confirm & Print Payslip",
+                    color = Color.White
+                )
             }
         },
         dismissButton = {

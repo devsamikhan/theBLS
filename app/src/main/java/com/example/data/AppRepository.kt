@@ -43,7 +43,7 @@ class AppRepository(private val appDao: AppDao) {
             createdAt = if (student.createdAt == 0L) now else student.createdAt,
             updatedAt = now,
             isDeleted = false,
-            syncStatus = DomainConstants.SYNC_STATUS_SYNCED
+            syncStatus = DomainConstants.SYNC_STATUS_PENDING
         )
         val rowId = appDao.insertStudent(studentWithAudit)
         val targetStudent = if (studentWithAudit.id == 0) studentWithAudit.copy(id = rowId.toInt()) else studentWithAudit
@@ -88,17 +88,42 @@ class AppRepository(private val appDao: AppDao) {
             createdAt = if (txWithVoucher.createdAt == 0L) now else txWithVoucher.createdAt,
             updatedAt = now,
             isDeleted = false,
-            syncStatus = DomainConstants.SYNC_STATUS_SYNCED
+            syncStatus = DomainConstants.SYNC_STATUS_PENDING
         )
         val rowId = appDao.insertTransaction(txWithAudit)
         val targetTx = if (txWithAudit.id == 0) txWithAudit.copy(id = rowId.toInt()) else txWithAudit
         syncManager.pushTransaction(targetTx)
         return rowId
     }
+
+    fun extractPairVoucher(description: String?): String {
+        if (description.isNullOrBlank()) return ""
+        val regex = Regex("\\[Pair:\\s*([^\\]]+)\\]", RegexOption.IGNORE_CASE)
+        val match = regex.find(description) ?: return ""
+        return match.groupValues.getOrNull(1)?.trim() ?: ""
+    }
     
     suspend fun deleteTransaction(transaction: Transaction) {
         appDao.softDeleteTransaction(transaction.id)
         syncManager.deleteTransactionFromCloud(transaction.id)
+
+        // Automatically soft-delete paired contra transfer if present
+        if (DomainConstants.isContraTransfer(transaction.category)) {
+            val pairVoucher = extractPairVoucher(transaction.description)
+            val allTxs = appDao.getAllTransactions()
+            val pairedTx = allTxs.find { other ->
+                other.id != transaction.id && (
+                    (pairVoucher.isNotBlank() && other.voucherNo.equals(pairVoucher, ignoreCase = true)) ||
+                    (DomainConstants.isContraTransfer(other.category) &&
+                     other.amount == transaction.amount &&
+                     Math.abs(other.date - transaction.date) < 60_000)
+                )
+            }
+            if (pairedTx != null) {
+                appDao.softDeleteTransaction(pairedTx.id)
+                syncManager.deleteTransactionFromCloud(pairedTx.id)
+            }
+        }
     }
 
     suspend fun getClassSummaryStats(): List<ClassSummaryStats> = appDao.getClassSummaryStats()
@@ -127,16 +152,34 @@ class AppRepository(private val appDao: AppDao) {
         return updated.size
     }
 
-    suspend fun restoreDatabase(students: List<Student>, transactions: List<Transaction>, closings: List<DailyClosing>) {
+    suspend fun restoreDatabase(
+        students: List<Student>,
+        transactions: List<Transaction>,
+        closings: List<DailyClosing>,
+        teachers: List<Teacher> = emptyList(),
+        users: List<AppUser> = emptyList()
+    ) {
         appDao.clearAllStudents()
         appDao.clearAllTransactions()
         appDao.clearAllDailyClosings()
         if (students.isNotEmpty()) appDao.insertStudents(students)
         if (transactions.isNotEmpty()) appDao.insertTransactions(transactions)
         if (closings.isNotEmpty()) appDao.insertDailyClosings(closings)
+
+        if (teachers.isNotEmpty()) {
+            appDao.clearAllTeachers()
+            appDao.insertTeachers(teachers)
+        }
+        if (users.isNotEmpty()) {
+            appDao.clearAllUsers()
+            appDao.insertUsers(users)
+        }
+
         students.forEach { syncManager.pushStudent(it) }
         transactions.forEach { syncManager.pushTransaction(it) }
         closings.forEach { syncManager.pushDailyClosing(it) }
+        teachers.forEach { syncManager.pushTeacher(it) }
+        users.forEach { syncManager.pushUser(it) }
     }
 
     // Daily Closings
@@ -249,7 +292,7 @@ class AppRepository(private val appDao: AppDao) {
             createdAt = if (teacher.createdAt == 0L) now else teacher.createdAt,
             updatedAt = now,
             isDeleted = false,
-            syncStatus = DomainConstants.SYNC_STATUS_SYNCED
+            syncStatus = DomainConstants.SYNC_STATUS_PENDING
         )
         val rowId = appDao.insertTeacher(teacherWithAudit)
         val target = if (teacherWithAudit.id == 0) teacherWithAudit.copy(id = rowId.toInt()) else teacherWithAudit

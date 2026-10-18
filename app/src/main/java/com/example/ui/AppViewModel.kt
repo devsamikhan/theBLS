@@ -416,16 +416,40 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentDayClosing = MutableStateFlow<DailyClosing?>(null)
     val currentDayClosing: StateFlow<DailyClosing?> = _currentDayClosing.asStateFlow()
 
-    fun refreshDailyClosing() {
+    fun refreshDailyClosing(forceRecalculate: Boolean = false) {
         viewModelScope.launch {
             val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
             val existing = repository.getDailyClosing(todayStr)
-            if (existing != null && existing.isClosed) {
-                _currentDayClosing.value = existing
+            val calculated = repository.calculateDailyClosingState(todayStr)
+            if (existing != null && existing.isClosed && !forceRecalculate) {
+                // If transactions were added after closing, keep closing balances in sync with reality
+                val updatedClosed = calculated.copy(
+                    isClosed = true,
+                    closedBy = existing.closedBy,
+                    closedAt = existing.closedAt
+                )
+                if (updatedClosed != existing) {
+                    repository.saveDailyClosing(updatedClosed)
+                    _currentDayClosing.value = updatedClosed
+                } else {
+                    _currentDayClosing.value = existing
+                }
             } else {
-                val calculated = repository.calculateDailyClosingState(todayStr)
                 _currentDayClosing.value = calculated
             }
+        }
+    }
+
+    fun reopenDayClosing() {
+        viewModelScope.launch {
+            val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+            val calculated = repository.calculateDailyClosingState(todayStr)
+            val reopenedState = calculated.copy(
+                isClosed = false,
+                closedBy = ""
+            )
+            repository.saveDailyClosing(reopenedState)
+            _currentDayClosing.value = reopenedState
         }
     }
 
@@ -494,7 +518,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             }
             
             val monthsToCheck = mutableListOf<String>()
-            for (i in 0 until 6) {
+            for (i in 0 until 12) {
                 if (tempCal.before(admCal)) break
                 monthsToCheck.add(sdf.format(tempCal.time))
                 tempCal.add(Calendar.MONTH, -1)
@@ -514,7 +538,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         tx.studentId == student.id && 
                         tx.category == DomainConstants.CAT_FEE_RECEIVED && 
                         tx.monthOfFee.equals(mStr, ignoreCase = true)
-                    }.sumOf { it.amount }
+                    }.sumOf { tx ->
+                        val fine = DomainConstants.extractLateFineFromDescription(tx.description)
+                        maxOf(0.0, tx.amount - fine)
+                    }
                     
                     val dueForMonth = maxOf(0.0, discountedMonthly - paidForMonth)
                     if (dueForMonth > 0.0) {
@@ -743,7 +770,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 paymentMode = DomainConstants.MODE_CASH,
                 amount = amount,
                 category = DomainConstants.CAT_BANK_DEPOSIT,
-                description = "Cash deposited into Bank ($bankDetails). Slip #$slipNo. $remarks".trim(),
+                description = "Cash deposited into Bank ($bankDetails). Slip #$slipNo. $remarks [Pair: $recVoucher]".trim(),
                 voucherNo = expVoucher,
                 date = now
             )
@@ -755,7 +782,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 paymentMode = DomainConstants.MODE_BANK,
                 amount = amount,
                 category = DomainConstants.CAT_CASH_DEPOSIT,
-                description = "Cash received from Counter Cash Box. Slip #$slipNo. $remarks".trim(),
+                description = "Cash received from Counter Cash Box. Slip #$slipNo. $remarks [Pair: $expVoucher]".trim(),
                 voucherNo = recVoucher,
                 date = now
             )
@@ -784,7 +811,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 paymentMode = DomainConstants.MODE_BANK,
                 amount = amount,
                 category = DomainConstants.CAT_BANK_WITHDRAWAL,
-                description = "Bank withdrawal for Counter Cash Box ($bankDetails). Ref #$chequeOrRefNo. $remarks".trim(),
+                description = "Bank withdrawal for Counter Cash Box ($bankDetails). Ref #$chequeOrRefNo. $remarks [Pair: $recVoucher]".trim(),
                 voucherNo = expVoucher,
                 date = now
             )
@@ -796,7 +823,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 paymentMode = DomainConstants.MODE_CASH,
                 amount = amount,
                 category = DomainConstants.CAT_CASH_FROM_BANK,
-                description = "Cash received from Bank Account withdrawal. Ref #$chequeOrRefNo. $remarks".trim(),
+                description = "Cash received from Bank Account withdrawal. Ref #$chequeOrRefNo. $remarks [Pair: $expVoucher]".trim(),
                 voucherNo = recVoucher,
                 date = now
             )
@@ -1196,7 +1223,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     suspend fun exportDatabaseToJson(): String {
         val root = JSONObject()
-        root.put("version", 5)
+        root.put("version", 6)
         root.put("exportTimestamp", System.currentTimeMillis())
         root.put("schoolName", "Bright Light School")
 
@@ -1225,6 +1252,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 put("picsAttached", s.picsAttached)
                 put("status", s.status)
                 put("photoUri", s.photoUri)
+                put("createdAt", s.createdAt)
+                put("updatedAt", s.updatedAt)
+                put("createdBy", s.createdBy)
+                put("isDeleted", s.isDeleted)
             })
         }
         root.put("students", sArray)
@@ -1245,6 +1276,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 put("recordedBy", tx.recordedBy)
                 put("description", tx.description)
                 put("voucherNo", tx.voucherNo)
+                put("payeeName", tx.payeeName)
+                put("invoiceNo", tx.invoiceNo)
+                put("teacherId", tx.teacherId ?: JSONObject.NULL)
+                put("createdAt", tx.createdAt)
+                put("updatedAt", tx.updatedAt)
+                put("isDeleted", tx.isDeleted)
             })
         }
         root.put("transactions", tArray)
@@ -1264,9 +1301,50 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 put("closingBank", c.closingBank)
                 put("isClosed", c.isClosed)
                 put("closedBy", c.closedBy)
+                put("closedAt", c.closedAt)
             })
         }
         root.put("dailyClosings", cArray)
+
+        val tchArray = JSONArray()
+        val allTeachers = repository.getAllTeachers()
+        allTeachers.forEach { tch ->
+            tchArray.put(JSONObject().apply {
+                put("id", tch.id)
+                put("name", tch.name)
+                put("designation", tch.designation)
+                put("contactNumber", tch.contactNumber)
+                put("cnic", tch.cnic)
+                put("qualification", tch.qualification)
+                put("monthlySalary", tch.monthlySalary)
+                put("joiningDate", tch.joiningDate)
+                put("status", tch.status)
+                put("photoUri", tch.photoUri)
+                put("address", tch.address)
+                put("createdAt", tch.createdAt)
+                put("updatedAt", tch.updatedAt)
+                put("createdBy", tch.createdBy)
+                put("isDeleted", tch.isDeleted)
+            })
+        }
+        root.put("teachers", tchArray)
+
+        val uArray = JSONArray()
+        val allUsers = repository.getAllUsers()
+        allUsers.forEach { u ->
+            uArray.put(JSONObject().apply {
+                put("id", u.id)
+                put("name", u.name)
+                put("email", u.email)
+                put("role", u.role)
+                put("pin", u.pin)
+                put("isActive", u.isActive)
+                put("createdBy", u.createdBy)
+                put("createdAt", u.createdAt)
+                put("updatedAt", u.updatedAt)
+            })
+        }
+        root.put("appUsers", uArray)
 
         return root.toString(2)
     }
@@ -1302,7 +1380,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                                 fatherCnicAttached = obj.optBoolean("fatherCnicAttached", false),
                                 picsAttached = obj.optBoolean("picsAttached", false),
                                 status = obj.optString("status", "Active"),
-                                photoUri = obj.optString("photoUri", "")
+                                photoUri = obj.optString("photoUri", ""),
+                                createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
+                                updatedAt = obj.optLong("updatedAt", System.currentTimeMillis()),
+                                createdBy = obj.optString("createdBy", "Admin"),
+                                isDeleted = obj.optBoolean("isDeleted", false)
                             )
                         )
                     }
@@ -1326,7 +1408,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                                 monthOfFee = if (obj.has("monthOfFee") && !obj.isNull("monthOfFee")) obj.optString("monthOfFee") else null,
                                 recordedBy = obj.optString("recordedBy", "Staff"),
                                 description = obj.optString("description", ""),
-                                voucherNo = obj.optString("voucherNo", "")
+                                voucherNo = obj.optString("voucherNo", ""),
+                                payeeName = obj.optString("payeeName", ""),
+                                invoiceNo = obj.optString("invoiceNo", ""),
+                                teacherId = if (obj.has("teacherId") && !obj.isNull("teacherId")) obj.optInt("teacherId") else null,
+                                createdAt = obj.optLong("createdAt", obj.optLong("date", System.currentTimeMillis())),
+                                updatedAt = obj.optLong("updatedAt", System.currentTimeMillis()),
+                                isDeleted = obj.optBoolean("isDeleted", false)
                             )
                         )
                     }
@@ -1349,15 +1437,64 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                                 closingCash = obj.optDouble("closingCash", 0.0),
                                 closingBank = obj.optDouble("closingBank", 0.0),
                                 isClosed = obj.optBoolean("isClosed", false),
-                                closedBy = obj.optString("closedBy", "")
+                                closedBy = obj.optString("closedBy", ""),
+                                closedAt = obj.optLong("closedAt", System.currentTimeMillis())
                             )
                         )
                     }
                 }
 
-                repository.restoreDatabase(sList, tList, cList)
+                val tchList = mutableListOf<Teacher>()
+                val tchArray = root.optJSONArray("teachers")
+                if (tchArray != null) {
+                    for (i in 0 until tchArray.length()) {
+                        val obj = tchArray.getJSONObject(i)
+                        tchList.add(
+                            Teacher(
+                                id = obj.optInt("id", 0),
+                                name = obj.optString("name", ""),
+                                designation = obj.optString("designation", ""),
+                                contactNumber = obj.optString("contactNumber", ""),
+                                cnic = obj.optString("cnic", ""),
+                                qualification = obj.optString("qualification", ""),
+                                monthlySalary = obj.optDouble("monthlySalary", 0.0),
+                                joiningDate = obj.optLong("joiningDate", System.currentTimeMillis()),
+                                status = obj.optString("status", "Active"),
+                                photoUri = obj.optString("photoUri", ""),
+                                address = obj.optString("address", ""),
+                                createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
+                                updatedAt = obj.optLong("updatedAt", System.currentTimeMillis()),
+                                createdBy = obj.optString("createdBy", "Admin"),
+                                isDeleted = obj.optBoolean("isDeleted", false)
+                            )
+                        )
+                    }
+                }
+
+                val uList = mutableListOf<AppUser>()
+                val uArray = root.optJSONArray("appUsers") ?: root.optJSONArray("app_users")
+                if (uArray != null) {
+                    for (i in 0 until uArray.length()) {
+                        val obj = uArray.getJSONObject(i)
+                        uList.add(
+                            AppUser(
+                                id = obj.optInt("id", 0),
+                                name = obj.optString("name", ""),
+                                email = obj.optString("email", ""),
+                                role = obj.optString("role", "Accountant"),
+                                pin = obj.optString("pin", "1111"),
+                                isActive = obj.optBoolean("isActive", true),
+                                createdBy = obj.optString("createdBy", "Super Admin"),
+                                createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
+                                updatedAt = obj.optLong("updatedAt", System.currentTimeMillis())
+                            )
+                        )
+                    }
+                }
+
+                repository.restoreDatabase(sList, tList, cList, tchList, uList)
                 refreshDailyClosing()
-                onResult(true, "Restored ${sList.size} students and ${tList.size} transactions successfully!")
+                onResult(true, "Restored ${sList.size} students, ${tList.size} transactions, ${tchList.size} staff members, and ${uList.size} users successfully!")
             } catch (e: Exception) {
                 onResult(false, "Restore failed: ${e.message}")
             }

@@ -665,6 +665,10 @@ fun ReportsTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
                                 postClosingBackupFile = backupFile
                             }
                         },
+                        onReopenDay = {
+                            viewModel.reopenDayClosing()
+                        },
+                        canReopen = showAdminPanel,
                         context = context,
                         students = students
                     )
@@ -757,6 +761,10 @@ fun ReportsTab(viewModel: AppViewModel, showAdminPanel: Boolean) {
                                 postClosingBackupFile = backupFile
                             }
                         },
+                        onReopenDay = {
+                            viewModel.reopenDayClosing()
+                        },
+                        canReopen = showAdminPanel,
                         context = context,
                         students = students
                     )
@@ -818,9 +826,49 @@ private fun DailyClosingSectionCard(
     currentClosing: com.example.data.DailyClosing?,
     rawTransactions: List<Transaction>,
     onCloseDay: () -> Unit,
+    onReopenDay: (() -> Unit)? = null,
+    canReopen: Boolean = false,
     context: android.content.Context,
     students: List<Student> = emptyList()
 ) {
+    var showConfirmReopenDialog by remember { mutableStateOf(false) }
+
+    if (showConfirmReopenDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmReopenDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LockOpen, contentDescription = null, tint = MaterialTheme.financialColors.goldBadge)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Reopen Today's Register", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text(
+                    "Are you sure you want to unseal today's register? This will re-enable closing adjustments and new transactions.",
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showConfirmReopenDialog = false
+                        onReopenDay?.invoke()
+                        Toast.makeText(context, "Day register reopened for editing", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.financialColors.goldBadge)
+                ) {
+                    Text("Yes, Reopen", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmReopenDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
@@ -957,21 +1005,41 @@ private fun DailyClosingSectionCard(
                         Text("Sign & Close Day Balance", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color.White)
                     }
                 } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            "Day logs sealed. Admin review required to edit.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "Day register sealed by ${closing.closedBy.ifBlank { "Admin" }}.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        if (canReopen && onReopenDay != null) {
+                            OutlinedButton(
+                                onClick = { showConfirmReopenDialog = true },
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.financialColors.goldBadge.copy(alpha = 0.5f)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(40.dp)
+                            ) {
+                                Icon(Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(15.dp), tint = MaterialTheme.financialColors.goldBadge)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Reopen Register (Admin)", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.financialColors.goldBadge)
+                            }
+                        }
                     }
                 }
 
