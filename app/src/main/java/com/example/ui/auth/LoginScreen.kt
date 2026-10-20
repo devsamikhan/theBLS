@@ -34,11 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.components.BLSLogo
 import com.example.ui.theme.*
-import com.example.util.BiometricAuthHelper
 
 @Composable
 fun LoginScreen(
-    onBiometricSuccess: ((String) -> Unit)? = null,
     onLoginAttempt: (String) -> Boolean,
     onEmailLoginAttempt: ((String, String) -> Boolean)? = null,
     onSuperAdminLoginAttempt: ((String, String) -> Boolean)? = null,
@@ -625,77 +623,39 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(18.dp))
 
-                    // Action Buttons Row (Verify & Biometric)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Button(
-                            onClick = {
-                                localError = null
-                                val email = staffEmailInput.trim()
-                                if (email.isBlank()) {
-                                    localError = "Please enter your registered email address."
-                                    hasError = true
-                                } else if (pinInput.length < 4) {
-                                    localError = "Please enter your complete 4-digit PIN."
-                                    hasError = true
-                                } else {
-                                    val success = onEmailLoginAttempt?.invoke(email, pinInput)
-                                        ?: onLoginAttempt(pinInput)
-                                    hasError = !success
-                                    if (!success) {
-                                        localError = "Invalid email or PIN! Please verify credentials."
-                                    }
+                    // Primary Verification Button
+                    Button(
+                        onClick = {
+                            localError = null
+                            val email = staffEmailInput.trim()
+                            if (email.isBlank()) {
+                                localError = "Please enter your registered email address."
+                                hasError = true
+                            } else if (pinInput.length < 4) {
+                                localError = "Please enter your complete 4-digit PIN."
+                                hasError = true
+                            } else {
+                                val success = onEmailLoginAttempt?.invoke(email, pinInput)
+                                    ?: onLoginAttempt(pinInput)
+                                hasError = !success
+                                if (!success) {
+                                    localError = "Invalid email or PIN! Please verify credentials."
                                 }
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(46.dp)
-                                .testTag("submit_login_button"),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(
-                                "Verify Authentication",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
-
-                        if (onBiometricSuccess != null) {
-                            IconButton(
-                                onClick = {
-                                    BiometricAuthHelper.authenticate(
-                                        context = context,
-                                        onSuccess = {
-                                            val email = staffEmailInput.trim()
-                                            if (email.isNotBlank() && onEmailLoginAttempt != null) {
-                                                onBiometricSuccess(email)
-                                            } else {
-                                                onBiometricSuccess("Admin")
-                                            }
-                                        },
-                                        onError = { errMsg ->
-                                            Toast.makeText(context, errMsg, Toast.LENGTH_SHORT).show()
-                                        }
-                                    )
-                                },
-                                modifier = Modifier
-                                    .size(46.dp)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
-                                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-                            ) {
-                                Icon(
-                                    Icons.Default.Fingerprint,
-                                    contentDescription = "Biometric Fingerprint Login",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(26.dp)
-                                )
                             }
-                        }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp)
+                            .testTag("submit_login_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            "Verify Authentication",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
                     }
                 }
             }

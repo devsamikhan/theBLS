@@ -73,7 +73,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             return false
         }
 
-        if (cleanKey != SecurityPreferences.DEFAULT_SUPER_ADMIN_KEY) {
+        if (!securityPrefs.validateSuperAdminKey(cleanKey)) {
             _loginError.value = "Invalid Super Admin Security Key."
             return false
         }
@@ -97,7 +97,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
         // 1. Check if Super Admin logging in through email
         if (cleanEmail == DomainConstants.SUPER_ADMIN_EMAIL.lowercase()) {
-            if (cleanPin == SecurityPreferences.DEFAULT_SUPER_ADMIN_KEY) {
+            if (securityPrefs.validateSuperAdminKey(cleanPin)) {
                 _currentUserRole.value = DomainConstants.ROLE_SUPER_ADMIN
                 _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
                 _currentLoggedInName.value = "Super Admin"
@@ -142,37 +142,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         return false
     }
 
-    fun loginWithBiometric(targetIdentifier: String = ""): Boolean {
-        _loginError.value = null
-        securityPrefs.resetFailedAttempts()
-
-        val cleanIdentifier = targetIdentifier.trim()
-        if (cleanIdentifier.equals(DomainConstants.SUPER_ADMIN_EMAIL, ignoreCase = true)) {
-            _currentUserRole.value = DomainConstants.ROLE_SUPER_ADMIN
-            _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
-            _currentLoggedInName.value = "Super Admin"
-            repository.setCurrentRole(DomainConstants.ROLE_SUPER_ADMIN)
-            com.example.util.ReportExporter.setActiveOperator("Super Admin", DomainConstants.ROLE_SUPER_ADMIN)
-            return true
+    fun updateSuperAdminPassword(currentKey: String, newKey: String): Boolean {
+        if (!securityPrefs.validateSuperAdminKey(currentKey.trim())) {
+            return false
         }
-
-        val allUsers = usersList.value
-        val matchedUser = allUsers.find { it.email.trim().equals(cleanIdentifier, ignoreCase = true) }
-        if (matchedUser != null && matchedUser.isActive) {
-            _currentUserRole.value = matchedUser.role
-            _currentLoggedInEmail.value = matchedUser.email
-            _currentLoggedInName.value = matchedUser.name
-            repository.setCurrentRole(matchedUser.role)
-            com.example.util.ReportExporter.setActiveOperator(matchedUser.name, matchedUser.role)
-            return true
+        if (newKey.trim().length < 6) {
+            return false
         }
-
-        // If biometric identifier not matched to a specific user, default to Super Admin if configured
-        _currentUserRole.value = DomainConstants.ROLE_SUPER_ADMIN
-        _currentLoggedInEmail.value = DomainConstants.SUPER_ADMIN_EMAIL
-        _currentLoggedInName.value = "Super Admin"
-        repository.setCurrentRole(DomainConstants.ROLE_SUPER_ADMIN)
-        com.example.util.ReportExporter.setActiveOperator("Super Admin", DomainConstants.ROLE_SUPER_ADMIN)
+        securityPrefs.setSuperAdminKey(newKey.trim())
         return true
     }
 

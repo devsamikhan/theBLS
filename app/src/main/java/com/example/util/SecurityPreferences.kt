@@ -13,6 +13,7 @@ class SecurityPreferences(context: Context) {
         private const val PREFS_NAME = "bls_security_prefs"
         private const val KEY_ADMIN_PIN_HASH = "key_admin_pin_hash"
         private const val KEY_ACCOUNTANT_PIN_HASH = "key_accountant_pin_hash"
+        private const val KEY_SUPER_ADMIN_KEY_HASH = "key_super_admin_key_hash"
         private const val KEY_FAILED_ATTEMPTS = "key_failed_attempts"
         private const val KEY_LOCKOUT_UNTIL = "key_lockout_until"
         private const val KEY_SOUND_ENABLED = "key_sound_enabled"
@@ -45,6 +46,9 @@ class SecurityPreferences(context: Context) {
             val legacyAccountant = prefs.getString("key_accountant_pin", DEFAULT_ACCOUNTANT_PIN) ?: DEFAULT_ACCOUNTANT_PIN
             setAccountantPin(legacyAccountant)
         }
+        if (!prefs.contains(KEY_SUPER_ADMIN_KEY_HASH)) {
+            setSuperAdminKey(DEFAULT_SUPER_ADMIN_KEY)
+        }
     }
 
     fun getAdminPin(): String {
@@ -62,6 +66,15 @@ class SecurityPreferences(context: Context) {
 
     fun setAccountantPin(newPin: String) {
         prefs.edit().putString(KEY_ACCOUNTANT_PIN_HASH, hashPin(newPin.trim())).apply()
+    }
+
+    fun setSuperAdminKey(newKey: String) {
+        prefs.edit().putString(KEY_SUPER_ADMIN_KEY_HASH, hashPin(newKey.trim())).apply()
+    }
+
+    fun validateSuperAdminKey(key: String): Boolean {
+        val targetHash = prefs.getString(KEY_SUPER_ADMIN_KEY_HASH, hashPin(DEFAULT_SUPER_ADMIN_KEY))
+        return hashPin(key.trim()) == targetHash
     }
 
     /**
@@ -162,6 +175,7 @@ class SecurityPreferences(context: Context) {
         prefs.edit()
             .putString(KEY_ADMIN_PIN_HASH, hashPin(DEFAULT_ADMIN_PIN))
             .putString(KEY_ACCOUNTANT_PIN_HASH, hashPin(DEFAULT_ACCOUNTANT_PIN))
+            .putString(KEY_SUPER_ADMIN_KEY_HASH, hashPin(DEFAULT_SUPER_ADMIN_KEY))
             .putString(KEY_FIREBASE_URL, DEFAULT_FIREBASE_URL)
             .putString(KEY_FIREBASE_AUTH_SECRET, "")
             .putLong(KEY_LAST_READ_ACTIVITY, 0L)

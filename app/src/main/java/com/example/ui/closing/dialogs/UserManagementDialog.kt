@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,6 +40,7 @@ fun UserManagementDialog(
     val users by viewModel.usersList.collectAsStateWithLifecycle()
 
     var showAddUserDialog by remember { mutableStateOf(false) }
+    var showChangeMasterPasswordDialog by remember { mutableStateOf(false) }
     var userToShare by remember { mutableStateOf<AppUser?>(null) }
     var showWipeConfirmDialog by remember { mutableStateOf(false) }
     var isWipingData by remember { mutableStateOf(false) }
@@ -176,6 +179,17 @@ fun UserManagementDialog(
                                 Text(DomainConstants.SUPER_ADMIN_EMAIL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
+
+                        OutlinedButton(
+                            onClick = { showChangeMasterPasswordDialog = true },
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Change Key", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
 
@@ -288,6 +302,21 @@ fun UserManagementDialog(
                 TextButton(onClick = { showWipeConfirmDialog = false }, enabled = !isWipingData) {
                     Text("Cancel")
                 }
+            }
+        )
+    }
+
+    // Change Master Passkey Dialog
+    if (showChangeMasterPasswordDialog) {
+        ChangeSuperAdminPasswordDialog(
+            onDismiss = { showChangeMasterPasswordDialog = false },
+            onConfirm = { currentKey, newKey ->
+                val success = viewModel.updateSuperAdminPassword(currentKey, newKey)
+                if (success) {
+                    Toast.makeText(context, "Super Admin passkey updated successfully!", Toast.LENGTH_SHORT).show()
+                    showChangeMasterPasswordDialog = false
+                }
+                success
             }
         )
     }
@@ -544,6 +573,106 @@ Your official staff login access has been created by Super Admin:
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Done") }
+        }
+    )
+}
+
+@Composable
+private fun ChangeSuperAdminPasswordDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (currentKey: String, newKey: String) -> Boolean
+) {
+    var currentKey by remember { mutableStateOf("") }
+    var newKey by remember { mutableStateOf("") }
+    var confirmKey by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showCurrentPassword by remember { mutableStateOf(false) }
+    var showNewPassword by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Default.LockReset, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text("Change Master Passkey", fontWeight = FontWeight.Bold)
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    "Update the Super Admin master password. Minimum 6 characters required.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = currentKey,
+                    onValueChange = { currentKey = it; errorMessage = null },
+                    label = { Text("Current Master Key") },
+                    singleLine = true,
+                    visualTransformation = if (showCurrentPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showCurrentPassword = !showCurrentPassword }) {
+                            Icon(if (showCurrentPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = newKey,
+                    onValueChange = { newKey = it; errorMessage = null },
+                    label = { Text("New Master Key") },
+                    singleLine = true,
+                    visualTransformation = if (showNewPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showNewPassword = !showNewPassword }) {
+                            Icon(if (showNewPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = confirmKey,
+                    onValueChange = { confirmKey = it; errorMessage = null },
+                    label = { Text("Confirm New Key") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        color = MaterialTheme.financialColors.expense,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (newKey.length < 6) {
+                        errorMessage = "New passkey must be at least 6 characters."
+                    } else if (newKey != confirmKey) {
+                        errorMessage = "New passkeys do not match."
+                    } else {
+                        val success = onConfirm(currentKey, newKey)
+                        if (!success) {
+                            errorMessage = "Current master key is incorrect."
+                        }
+                    }
+                },
+                enabled = currentKey.isNotBlank() && newKey.isNotBlank() && confirmKey.isNotBlank()
+            ) {
+                Text("Update Key")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
 }

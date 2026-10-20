@@ -62,9 +62,6 @@ fun BLSApp(viewModel: AppViewModel) {
         Crossfade(targetState = currentRole, label = "RoleScreenTransition") { role ->
             when (role) {
                 DomainConstants.ROLE_NONE -> LoginScreen(
-                    onBiometricSuccess = { targetRole ->
-                        viewModel.loginWithBiometric(targetRole)
-                    },
                     onLoginAttempt = { pin ->
                         viewModel.login(pin)
                     },
