@@ -362,13 +362,13 @@ private fun StaffUserCard(
                             Text(user.name, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
-                                color = if (user.role == DomainConstants.ROLE_ADMIN) Color(0xFFE8F5E9) else Color(0xFFE3F2FD)
+                                color = if (user.role == DomainConstants.ROLE_ADMIN) MaterialTheme.financialColors.cashContainer else MaterialTheme.financialColors.bankContainer
                             ) {
                                 Text(
                                     user.role,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (user.role == DomainConstants.ROLE_ADMIN) Color(0xFF2E7D32) else Color(0xFF1976D2),
+                                    color = if (user.role == DomainConstants.ROLE_ADMIN) MaterialTheme.financialColors.cash else MaterialTheme.financialColors.bank,
                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
                                 )
                             }
@@ -383,7 +383,7 @@ private fun StaffUserCard(
                         if (user.isActive) "Active" else "Disabled",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (user.isActive) Color(0xFF2E7D32) else MaterialTheme.financialColors.expense
+                        color = if (user.isActive) MaterialTheme.financialColors.cash else MaterialTheme.financialColors.expense
                     )
                     Switch(
                         checked = user.isActive,

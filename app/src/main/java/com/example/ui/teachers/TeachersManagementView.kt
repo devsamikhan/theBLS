@@ -669,7 +669,7 @@ private fun TeacherCard(
                             Icon(
                                 Icons.Default.Chat,
                                 contentDescription = "WhatsApp",
-                                tint = Color(0xFF25D366),
+                                tint = MaterialTheme.financialColors.whatsapp,
                                 modifier = Modifier
                                     .size(13.dp)
                                     .clickable {

@@ -1259,6 +1259,21 @@ private fun AdminReportCenterCard(
     var selectedCategoryIndex by remember { mutableStateOf(0) }
     val categoryTabs = listOf("All Reports", "Cashflow", "Students & Staff", "Security")
 
+    val cashColor = MaterialTheme.financialColors.cash
+    val cashContainerColor = MaterialTheme.financialColors.cashContainer
+    val bankColor = MaterialTheme.financialColors.bank
+    val bankContainerColor = MaterialTheme.financialColors.bankContainer
+    val expenseColor = MaterialTheme.financialColors.expense
+    val expenseContainerColor = MaterialTheme.financialColors.expenseContainer
+    val amberColor = MaterialTheme.financialColors.amber
+    val amberContainerColor = MaterialTheme.financialColors.amberContainer
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val secondaryContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val tertiaryContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+    val payrollColor = MaterialTheme.financialColors.payroll
+    val payrollContainerColor = MaterialTheme.financialColors.payrollContainer
+
     val financialReports = remember(rawTransactions, metrics, closingHistory) {
         listOf(
             ReportTileItem(
@@ -1266,8 +1281,8 @@ private fun AdminReportCenterCard(
                 description = "Complete cash & bank register",
                 badgeText = "PDF",
                 icon = Icons.Default.ReceiptLong,
-                iconBgColor = Color(0xFFE8F5E9),
-                iconTintColor = Color(0xFF2E7D32),
+                iconBgColor = cashContainerColor,
+                iconTintColor = cashColor,
                 primaryButtonText = "Download",
                 onPrimaryAction = {
                     val file = ReportExporter.exportTransactionsToPdf(
@@ -1302,8 +1317,8 @@ private fun AdminReportCenterCard(
                 description = "Income & expense breakdown",
                 badgeText = "PDF",
                 icon = Icons.Default.DateRange,
-                iconBgColor = Color(0xFFE3F2FD),
-                iconTintColor = Color(0xFF1976D2),
+                iconBgColor = bankContainerColor,
+                iconTintColor = bankColor,
                 primaryButtonText = "Select Month",
                 onPrimaryAction = onShowMonthly
             ),
@@ -1312,8 +1327,8 @@ private fun AdminReportCenterCard(
                 description = "Date range cashflow analysis",
                 badgeText = "PDF",
                 icon = Icons.Default.CalendarMonth,
-                iconBgColor = Color(0xFFE0F7FA),
-                iconTintColor = Color(0xFF00838F),
+                iconBgColor = secondaryContainerColor,
+                iconTintColor = secondaryColor,
                 primaryButtonText = "Pick Range",
                 onPrimaryAction = onShowCustomDateRange
             ),
@@ -1322,8 +1337,8 @@ private fun AdminReportCenterCard(
                 description = "Campus expense distribution",
                 badgeText = "PDF",
                 icon = Icons.Default.PieChart,
-                iconBgColor = Color(0xFFFFEBEE),
-                iconTintColor = Color(0xFFC62828),
+                iconBgColor = expenseContainerColor,
+                iconTintColor = expenseColor,
                 primaryButtonText = "Analyze",
                 onPrimaryAction = onShowExpenseBreakdown
             ),
@@ -1332,8 +1347,8 @@ private fun AdminReportCenterCard(
                 description = "Daily shift close history",
                 badgeText = "PDF",
                 icon = Icons.Default.History,
-                iconBgColor = Color(0xFFFFF3E0),
-                iconTintColor = Color(0xFFE65100),
+                iconBgColor = amberContainerColor,
+                iconTintColor = amberColor,
                 primaryButtonText = "Download",
                 onPrimaryAction = {
                     val file = ReportExporter.exportDailyClosingHistoryToPdf(context, closingHistory)
@@ -1354,8 +1369,8 @@ private fun AdminReportCenterCard(
                 description = "Spreadsheet export",
                 badgeText = "EXCEL",
                 icon = Icons.Default.TableChart,
-                iconBgColor = Color(0xFFE8F5E9),
-                iconTintColor = Color(0xFF1B5E20),
+                iconBgColor = cashContainerColor,
+                iconTintColor = cashColor,
                 primaryButtonText = "Export CSV",
                 onPrimaryAction = {
                     val file = ReportExporter.exportClosingToCsv(
@@ -1391,8 +1406,8 @@ private fun AdminReportCenterCard(
                 description = "Individual student fee ledger",
                 badgeText = "PDF",
                 icon = Icons.Default.School,
-                iconBgColor = Color(0xFFF3E5F5),
-                iconTintColor = Color(0xFF7B1FA2),
+                iconBgColor = tertiaryContainerColor,
+                iconTintColor = tertiaryColor,
                 primaryButtonText = "Find Student",
                 onPrimaryAction = onShowStudent
             ),
@@ -1401,8 +1416,8 @@ private fun AdminReportCenterCard(
                 description = "Class-wise collection audit",
                 badgeText = "AUDIT",
                 icon = Icons.Default.FactCheck,
-                iconBgColor = Color(0xFFE0F2F1),
-                iconTintColor = Color(0xFF00695C),
+                iconBgColor = secondaryContainerColor,
+                iconTintColor = secondaryColor,
                 primaryButtonText = "Audit Sheet",
                 onPrimaryAction = onShowClassAudit
             ),
@@ -1411,8 +1426,8 @@ private fun AdminReportCenterCard(
                 description = "Outstanding arrears list",
                 badgeText = "DUE LIST",
                 icon = Icons.Default.Warning,
-                iconBgColor = Color(0xFFFFEBEE),
-                iconTintColor = Color(0xFFC62828),
+                iconBgColor = expenseContainerColor,
+                iconTintColor = expenseColor,
                 primaryButtonText = "Defaulters",
                 onPrimaryAction = onShowDefaultersAudit
             ),
@@ -1421,8 +1436,8 @@ private fun AdminReportCenterCard(
                 description = "Faculty payroll disbursement",
                 badgeText = "PAYROLL",
                 icon = Icons.Default.Badge,
-                iconBgColor = Color(0xFFEDE7F6),
-                iconTintColor = Color(0xFF512DA8),
+                iconBgColor = payrollContainerColor,
+                iconTintColor = payrollColor,
                 primaryButtonText = "Payroll PDF",
                 onPrimaryAction = onShowStaffPayroll
             ),
@@ -1431,8 +1446,8 @@ private fun AdminReportCenterCard(
                 description = "3-Copy challans (08 Due)",
                 badgeText = "08 DUE",
                 icon = Icons.Default.ReceiptLong,
-                iconBgColor = Color(0xFFFFF3E0),
-                iconTintColor = Color(0xFFE65100),
+                iconBgColor = amberContainerColor,
+                iconTintColor = amberColor,
                 primaryButtonText = "Challans",
                 onPrimaryAction = onShow3PartChallan
             )
@@ -1538,10 +1553,10 @@ private fun AdminReportCenterCard(
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
-                                .background(Color(0xFFEDE7F6), RoundedCornerShape(10.dp)),
+                                .background(MaterialTheme.financialColors.payrollContainer, RoundedCornerShape(10.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Security, contentDescription = null, tint = Color(0xFF512DA8), modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.financialColors.payroll, modifier = Modifier.size(18.dp))
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
@@ -1617,9 +1632,9 @@ private fun AdminReportCenterCard(
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                             modifier = Modifier.height(32.dp)
                         ) {
-                            Icon(Icons.Default.CloudSync, contentDescription = null, modifier = Modifier.size(13.dp), tint = Color(0xFF0288D1))
+                            Icon(Icons.Default.CloudSync, contentDescription = null, modifier = Modifier.size(13.dp), tint = MaterialTheme.financialColors.bank)
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Cloud Setup", style = MaterialTheme.typography.labelSmall, color = Color(0xFF0288D1))
+                            Text("Cloud Setup", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.financialColors.bank)
                         }
                     }
 
@@ -1638,7 +1653,7 @@ private fun AdminReportCenterCard(
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Button(
                                 onClick = onGoogleDriveBackup,
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A73E8)),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                 shape = RoundedCornerShape(8.dp),
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                                 modifier = Modifier.height(32.dp)
@@ -1650,10 +1665,10 @@ private fun AdminReportCenterCard(
                             IconButton(
                                 onClick = onExportBackup,
                                 modifier = Modifier
-                                    .background(Color(0xFFE8F5E9), CircleShape)
+                                    .background(MaterialTheme.financialColors.cashContainer, CircleShape)
                                     .size(32.dp)
                             ) {
-                                Icon(Icons.Default.CloudDownload, contentDescription = "Export Backup", tint = Color(0xFF2E7D32), modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.CloudDownload, contentDescription = "Export Backup", tint = MaterialTheme.financialColors.cash, modifier = Modifier.size(16.dp))
                             }
                             IconButton(
                                 onClick = onRestoreBackup,

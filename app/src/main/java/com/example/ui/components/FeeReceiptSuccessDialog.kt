@@ -35,7 +35,7 @@ fun FeeReceiptSuccessDialog(
     onSharePdf: () -> Unit
 ) {
     val currencyFormat = NumberFormat.getNumberInstance(Locale.US)
-    val whatsappGreen = Color(0xFF25D366)
+    val whatsappGreen = MaterialTheme.financialColors.whatsapp
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -307,7 +307,7 @@ fun FamilyFeeReceiptSuccessDialog(
     onSharePdf: () -> Unit
 ) {
     val currencyFormat = NumberFormat.getNumberInstance(Locale.US)
-    val whatsappGreen = Color(0xFF25D366)
+    val whatsappGreen = MaterialTheme.financialColors.whatsapp
 
     Dialog(
         onDismissRequest = onDismiss,

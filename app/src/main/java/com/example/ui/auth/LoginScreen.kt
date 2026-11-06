@@ -173,12 +173,12 @@ fun LoginScreen(
                             Icons.Default.VerifiedUser,
                             contentDescription = null,
                             modifier = Modifier.size(15.dp),
-                            tint = if (isSuperAdminMode) Color(0xFFE65100) else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = if (isSuperAdminMode) MaterialTheme.financialColors.amber else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             "Super User",
-                            fontSize = 11.5.sp,
+                            fontSize = 12.sp,
                             fontWeight = if (isSuperAdminMode) FontWeight.Bold else FontWeight.Medium,
                             color = if (isSuperAdminMode) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -205,14 +205,14 @@ fun LoginScreen(
                         Surface(
                             modifier = Modifier.size(44.dp),
                             shape = CircleShape,
-                            color = Color(0xFFFFF3E0),
-                            border = BorderStroke(1.dp, Color(0xFFFFB74D))
+                            color = MaterialTheme.financialColors.amberContainer.copy(alpha = 0.5f),
+                            border = BorderStroke(1.dp, MaterialTheme.financialColors.amber.copy(alpha = 0.6f))
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Default.Security,
                                     contentDescription = null,
-                                    tint = Color(0xFFE65100),
+                                    tint = MaterialTheme.financialColors.amber,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -243,14 +243,14 @@ fun LoginScreen(
                             readOnly = true,
                             label = { Text("Super Admin Gmail") },
                             leadingIcon = {
-                                Icon(Icons.Default.Mail, contentDescription = null, tint = Color(0xFFE65100), modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Mail, contentDescription = null, tint = MaterialTheme.financialColors.amber, modifier = Modifier.size(18.dp))
                             },
                             trailingIcon = {
                                 Surface(
                                     shape = RoundedCornerShape(4.dp),
-                                    color = Color(0xFFE8F5E9)
+                                    color = MaterialTheme.financialColors.cashContainer
                                 ) {
-                                    Text("VERIFIED", color = Color(0xFF2E7D32), fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                    Text("VERIFIED", color = MaterialTheme.financialColors.cash, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                 }
                             },
                             singleLine = true,
@@ -268,7 +268,7 @@ fun LoginScreen(
                             label = { Text("Master Passkey") },
                             placeholder = { Text("Enter Master Passkey") },
                             leadingIcon = {
-                                Icon(Icons.Default.Key, contentDescription = null, tint = Color(0xFFE65100), modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Key, contentDescription = null, tint = MaterialTheme.financialColors.amber, modifier = Modifier.size(18.dp))
                             },
                             trailingIcon = {
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -339,7 +339,7 @@ fun LoginScreen(
                                 }
                             },
                             modifier = Modifier.fillMaxWidth().height(46.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.financialColors.amber),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Icon(Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(16.dp))

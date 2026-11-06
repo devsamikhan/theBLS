@@ -116,6 +116,16 @@ data class FinancialColorScheme(
     val goldBadgeContainer: Color,
     val onGoldBadgeContainer: Color,
 
+    val whatsapp: Color,
+    val onWhatsapp: Color,
+    val whatsappContainer: Color,
+    val onWhatsappContainer: Color,
+
+    val payroll: Color,
+    val onPayroll: Color,
+    val payrollContainer: Color,
+    val onPayrollContainer: Color,
+
     val shimmerBase: Color,
     val shimmerHighlight: Color
 ) {
@@ -146,6 +156,16 @@ val LightFinancialColorScheme = FinancialColorScheme(
     goldBadgeContainer = Color(0xFFFEF3C7),     // Amber-100
     onGoldBadgeContainer = Color(0xFF78350F),
 
+    whatsapp = Color(0xFF25D366),
+    onWhatsapp = Color(0xFFFFFFFF),
+    whatsappContainer = Color(0xFFE8F8EE),
+    onWhatsappContainer = Color(0xFF0F5132),
+
+    payroll = Color(0xFF1B365D),
+    onPayroll = Color(0xFFFFFFFF),
+    payrollContainer = Color(0xFFEFF6FF),
+    onPayrollContainer = Color(0xFF0F2440),
+
     shimmerBase = Color(0xFFF1F5F9),
     shimmerHighlight = Color(0xFFF8FAFC)
 )
@@ -170,6 +190,16 @@ val DarkFinancialColorScheme = FinancialColorScheme(
     onGoldBadge = Color(0xFF78350F),
     goldBadgeContainer = Color(0xFF92400E),
     onGoldBadgeContainer = Color(0xFFFDE68A),
+
+    whatsapp = Color(0xFF2EE575),
+    onWhatsapp = Color(0xFF063319),
+    whatsappContainer = Color(0xFF0A4423),
+    onWhatsappContainer = Color(0xFFA7F3D0),
+
+    payroll = Color(0xFF93C5FD),
+    onPayroll = Color(0xFF0F2440),
+    payrollContainer = Color(0xFF172554),
+    onPayrollContainer = Color(0xFFDBEAFE),
 
     shimmerBase = Color(0xFF1E293B),
     shimmerHighlight = Color(0xFF334155)

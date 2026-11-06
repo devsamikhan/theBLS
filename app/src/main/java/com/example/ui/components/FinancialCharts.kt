@@ -279,28 +279,28 @@ private fun ClassRecoveryItem(stat: ClassRecoveryStat) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (stat.defaultersCount > 0) {
                     Surface(
-                        color = Color(0xFFFEE2E2),
+                        color = MaterialTheme.financialColors.expenseContainer,
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
                             text = "${stat.defaultersCount} Unpaid",
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF991B1B),
+                            color = MaterialTheme.financialColors.expense,
                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
                         )
                     }
                 }
                 if (stat.paidCount > 0) {
                     Surface(
-                        color = Color(0xFFDCFCE7),
+                        color = MaterialTheme.financialColors.cashContainer,
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
                             text = "${stat.paidCount} Paid",
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF166534),
+                            color = MaterialTheme.financialColors.cash,
                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
                         )
                     }

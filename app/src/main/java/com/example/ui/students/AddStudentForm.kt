@@ -575,10 +575,10 @@ fun AddStudentForm(
                                 Box(
                                     modifier = Modifier
                                         .size(28.dp)
-                                        .background(Color(0xFFE0F7FA), RoundedCornerShape(8.dp)),
+                                        .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f), RoundedCornerShape(8.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Default.FactCheck, contentDescription = null, tint = Color(0xFF00838F), modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.FactCheck, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
                                 }
                                 Column {
                                     Text("NADRA & Verification", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleSmall)
@@ -586,10 +586,10 @@ fun AddStudentForm(
                                 }
                             }
                             Surface(
-                                color = Color(0xFF00838F).copy(alpha = 0.08f),
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
                                 shape = RoundedCornerShape(6.dp)
                             ) {
-                                Text("Step 2", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00838F), modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                                Text("Step 2", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                             }
                         }
 
@@ -1382,12 +1382,12 @@ fun AdmissionSuccessDialog(
 
                     OutlinedButton(
                         onClick = onShareWhatsApp,
-                        border = BorderStroke(1.dp, Color(0xFF25D366)),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF1E7E34)),
+                        border = BorderStroke(1.dp, MaterialTheme.financialColors.whatsapp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.financialColors.whatsapp),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = null, tint = Color(0xFF25D366), modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.financialColors.whatsapp, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Send WhatsApp Welcome Slip", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }

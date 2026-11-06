@@ -23,6 +23,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.util.AppUpdateInfo
 import com.example.util.GitHubUpdateManager
+import com.example.ui.theme.financialColors
 
 @Composable
 fun AppUpdateDialog(
@@ -258,7 +259,7 @@ fun AppUpdateDialog(
                                 text = if (isDownloaded) "Download Complete!" else "Downloading update...",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (isDownloaded) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary
+                                color = if (isDownloaded) MaterialTheme.financialColors.cash else MaterialTheme.colorScheme.primary
                             )
                             Text(
                                 text = "${((downloadProgress ?: 0f) * 100).toInt()}%",
@@ -274,7 +275,7 @@ fun AppUpdateDialog(
                                 .fillMaxWidth()
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp)),
-                            color = if (isDownloaded) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary,
+                            color = if (isDownloaded) MaterialTheme.financialColors.cash else MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     }
@@ -313,7 +314,7 @@ fun AppUpdateDialog(
                             .height(42.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isDownloaded) Color(0xFF1B5E20) else MaterialTheme.colorScheme.primary
+                            containerColor = if (isDownloaded) MaterialTheme.financialColors.cash else MaterialTheme.colorScheme.primary
                         )
                     ) {
                         Row(
