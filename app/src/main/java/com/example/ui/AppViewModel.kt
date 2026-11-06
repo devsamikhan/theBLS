@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.*
 import com.example.util.SecurityPreferences
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -113,6 +114,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         // 2. Check registered staff users from local/synced database
         val allUsers = usersList.value
         val matchedUser = allUsers.find { it.email.trim().equals(cleanEmail, ignoreCase = true) }
+            ?: runBlocking(Dispatchers.IO) { repository.getUserByEmail(cleanEmail) }
 
         if (matchedUser != null) {
             if (!matchedUser.isActive) {
